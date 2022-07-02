@@ -1,0 +1,23 @@
+{
+  "name": "BU2506FV",
+  "keywords": "DAC,digital,analog,convertor,percentage",
+  "description": "Arduino library for 10bit 8-channel SPI DAC Microchip BU2506FV.",
+  "authors":
+  [
+    {
+      "name": "Timo Altholtmann",
+      "email": "blog@altholtmann.com",
+      "maintainer": true
+    }
+  ],
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/timo1235/bu2506fv-dac"
+  },
+  "version": "0.0.1",
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "*",
+  "headers": "BU2506FV.h"
+}
