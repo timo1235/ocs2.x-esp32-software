@@ -1,41 +1,57 @@
 #include <includes.h>
 
-extern DATA_TO_CONTROL dataToControl;
+TaskHandle_t DisplayTask;
 
 void setup()
 {
     Serial.begin(115200);
 
-    ios.setup();
-    protocol_setup();
+    ioControl.setup();
+    protocol.setup();
+#if AXIS1_ACTIVE || AXIS2_ACTIVE || AXIS3_ACTIVE
+    stepperControl.setup();
+#endif
+#if AXIS1_ACTIVE
+    stepperControl.addAxis(
+        AXIS1_MOTOR1,
+        AXIS1_MOTOR1_ENDSTOP_INPUT,
+        AXIS1_MOTOR2,
+        AXIS1_MOTOR2_ENDSTOP_INPUT,
+        AXIS1_STEPS_PER_REVOLUTION,
+        AXIS1_MM_PER_REVOLUTION,
+        AXIS1_AS_SPEED_MM_S,
+        AXIS1_REVERSE_MOTOR_DIRECTION);
+#endif
+#if AXIS2_ACTIVE
+    stepperControl.addAxis(
+        AXIS2_MOTOR1,
+        AXIS2_MOTOR1_ENDSTOP_INPUT,
+        AXIS2_MOTOR2,
+        AXIS2_MOTOR2_ENDSTOP_INPUT,
+        AXIS2_STEPS_PER_REVOLUTION,
+        AXIS2_MM_PER_REVOLUTION,
+        AXIS2_AS_SPEED_MM_S,
+        AXIS2_REVERSE_MOTOR_DIRECTION);
+#endif
+#if AXIS3_ACTIVE
+    stepperControl.addAxis(
+        AXIS3_MOTOR1,
+        AXIS3_MOTOR1_ENDSTOP_INPUT,
+        AXIS3_MOTOR2,
+        AXIS3_MOTOR2_ENDSTOP_INPUT,
+        AXIS3_STEPS_PER_REVOLUTION,
+        AXIS3_MM_PER_REVOLUTION,
+        AXIS3_AS_SPEED_MM_S,
+        AXIS3_REVERSE_MOTOR_DIRECTION);
+#endif
+
+    // DPRINT("Packagesize DATA_TO_CONTROL in bytes: ");
+    // DPRINTLN(sizeof(DATA_TO_CONTROL));
+    // DPRINT("Packagesize DATA_TO_CLIENT in bytes: ");
+    // DPRINTLN(sizeof(DATA_TO_CLIENT));
 }
 
 void loop()
 {
-    ios.writeDataBag(&dataToControl);
-
-    delay(WRITE_DATA_BAG_INTERVAL_MS);
-    // Serial.println("First");
-    // ios.setAuswahlX(HIGH);
-    // delay(1000);
-    // Serial.println("Second");
-    // ios.setAuswahlX(LOW);
-    // delay(1000);
-
-    // for (int i = 0; i < 1023; i++)
-    // {
-    //   uint64_t timeBefore = micros();
-    //   dac_set_all_channel(i);
-    //   uint64_t timeAfter = micros();
-
-    //   Serial.print("Time in micros taken: ");
-    //   Serial.println(timeAfter-timeBefore);
-
-    //   delay(100);
-    // }
-    // for (int i = 0; i < 1023; i++)
-    // {
-    //   dac_set_all_channel(1023-i);
-    //   delay(1);
-    // }
+    // Nothing to do here, since all the work is done in seperate tasks
 }

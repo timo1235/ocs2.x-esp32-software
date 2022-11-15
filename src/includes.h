@@ -2,10 +2,9 @@
 #define ocs_includes_h
 
 // versioning
-#define OCS_VERSION "0.1"
+#define OCS2_SOFTWARE_VERSION 1
 
 #include <configuration.h>
-#include <protocol.h>
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -14,16 +13,31 @@
 #include <esp_now.h>
 // Onboard DAC library
 #include <BU2506FV.h>
-// PCA9555 library
+// Onboard PCA9555 library
 #include <clsPCA9555.h>
+// LED Controller library
+#include <LEDController.h>
+// Stepper library
+#include "FastAccelStepper.h"
 
+// Temperature Sensor library
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+#include <protocol.h>
 #include <pinmap.h>
 #include <iocontrol.h>
+#include <steppercontrol.h>
 
-extern IOCONTROL ios;
+// This makes it usable in all files
+extern IOCONTROL ioControl;
+extern STEPPERCONTROL stepperControl;
+extern DATA_TO_CONTROL dataToControl;
+extern DATA_TO_CLIENT dataToClient;
+extern PROTOCOL protocol;
 
 // DEBUG MACRO
-#ifdef OCS_DEBUG    //Macros are usually in all capital letters.
+#if OCS_DEBUG == true    //Macros are usually in all capital letters.
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
 #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //DPRINTLN is a macro, debug print with new line
 #else

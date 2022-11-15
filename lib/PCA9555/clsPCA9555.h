@@ -41,15 +41,17 @@ public:
     PCA9555(uint8_t address, int interruptPin = -1);     // optional interrupt pin in second argument
     void pinMode(uint8_t pin, uint8_t IOMode );          // pinMode
     uint8_t digitalRead(uint8_t pin);                    // digitalRead
+    uint8_t digitalReadAll();                    // digitalRead
     void digitalWrite(uint8_t pin, uint8_t value );      // digitalWrite
     uint8_t stateOfPin(uint8_t pin);                     // Actual ISR
     void setClock(uint32_t clockFrequency);              // Clock speed
     bool begin(byte SDAPin = SDA, byte SCLPin = SCL);    // Checks if PCA is responsive
+    void pinStates();           // Function tied to interrupt
 
 private:
     static PCA9555* instancePointer;
     static void alertISR(void); // Function pointing to actual ISR
-    void pinStates();           // Function tied to interrupt
+    int _interruptPin;
 
     //
     // low level methods

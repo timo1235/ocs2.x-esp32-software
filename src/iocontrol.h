@@ -1,14 +1,21 @@
-#ifndef ocs_ioexpander_h
-#define ocs_ioexpander_h
+#pragma once
 
 #include <protocol.h>
+// Temperature Sensor library
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <pinmap.h>
+#include <LEDcontroller.h>
 
 #define PCA9555_ADRESS_1 0x20
 #define PCA9555_ADRESS_2 0x24
 
-#define DAC_JOYSTICK_RESET_VALUE 1023/2
+#define DAC_JOYSTICK_RESET_VALUE 1023 / 2
+#define REVERSE_INPUTS true // Since the inputs have pullups installed, reading a digital 1 is OFF and a digital 0 is ON -> reserveInputs = true
+#define TEMPERATURE_READ_INTERVAL_MS 10000
+#define CLIENT_DATA_UPDATE_INTERVAL_MS 5
 
-// channel map
+// DAC channel map
 #define DAC_JOYSTICK_X 3
 #define DAC_JOYSTICK_Y 4
 #define DAC_JOYSTICK_Z 5
@@ -18,70 +25,149 @@
 #define DAC_7 7
 #define DAC_8 8
 
+typedef struct
+{
+    byte ioport;                  // 1 or 2
+    byte port;                    // E.g. IO1_ALARMALL
+    uint32_t lastRead;            // miliis() of last read
+    uint32_t lastChange;          // miliis() of last change
+    bool lastState;               // last state of the input
+    bool state;                   // current state of the input
+    uint16_t readInterval_MS;     // How often should the input be read
+    uint16_t debounceInterval_MS; // How long should the input be stable before it is considered stable
+} BOUNCE_INPUT;
+
 /** enum with mapping names of ports */
-enum {
-    IO1_DIRX, IO1_DIRY, IO1_DIRZ , IO1_DIRA , IO1_DIRB , IO1_DIRC , IO1_SPEED1 , IO1_SPEED2 ,
-    IO1_AUSWAHLZ, IO1_AUSWAHLY, IO1_AUSWAHLX, IO1_OK, IO1_MOTORSTART, IO1_PROGRAMMSTART, IO1_ALARMALL, IO1_AUTOSQUARE
+enum
+{
+    IO1_DIRX,
+    IO1_DIRY,
+    IO1_DIRZ,
+    IO1_DIRA,
+    IO1_DIRB,
+    IO1_DIRC,
+    IO1_SPEED1,
+    IO1_SPEED2,
+    IO1_SELECT_AXIS_Z,
+    IO1_SELECT_AXIS_Y,
+    IO1_SELECT_AXIS_X,
+    IO1_OK,
+    IO1_MOTORSTART,
+    IO1_PROGRAMMSTART,
+    IO1_ALARMALL,
+    IO1_AUTOSQUARE
 };
 
-enum {
-    IO2_IN1, IO2_IN2, IO2_IN3 , IO2_IN4 , IO2_IN5 , IO2_IN6 , IO2_IN7 , IO2_IN8 ,
-    IO2_IN9, IO2_IN10, IO2_ENA, IO2_SPINDEL, IO2_OUT1, IO2_OUT2, IO2_OUT3, IO2_OUT4
+enum
+{
+    IO2_IN1,
+    IO2_IN2,
+    IO2_IN3,
+    IO2_IN4,
+    IO2_IN5,
+    IO2_IN6,
+    IO2_IN7,
+    IO2_IN8,
+    IO2_IN9,
+    IO2_IN10,
+    IO2_ENA,
+    IO2_SPINDEL,
+    IO2_OUT1,
+    IO2_OUT2,
+    IO2_OUT3,
+    IO2_OUT4
 };
 
-class IOCONTROL {
-    public:
-        IOCONTROL();
-        void setup();
-        // getters / inputs
-        bool getAlarmAll();
-        bool getAutosquare();
-        bool getIn1();
-        bool getIn2();
-        bool getIn3();
-        bool getIn4();
-        bool getIn5();
-        bool getIn6();
-        bool getIn7();
-        bool getIn8();
-        bool getIn9();
-        bool getIn10();        
-        bool getSpindelOnOff();        
-        // setters / outputs
-        void setDirX(bool value);
-        void setDirY(bool value);
-        void setDirZ(bool value);
-        void setDirA(bool value);
-        void setDirB(bool value);
-        void setDirC(bool value);
-        
-        #ifdef ESP_HANDWHEEL
-        void setSpeed1(bool value);
-        void setSpeed2(bool value);
-        void setAuswahlX(bool value);
-        void setAuswahlY(bool value);
-        void setAuswahlZ(bool value);
-        void setOK(bool value);
-        void setMotorStart(bool value);
-        void setProgrammStart(bool value);
-        #endif
+class IOCONTROL
+{
+public:
+    IOCONTROL();
+    void setup();
+    void initPCA9555();
+    void loop();
+    // getters / inputs
+    bool getAlarmAll(bool forceDirectRead = false);
+    bool getAutosquare(bool forceDirectRead = false);
+    bool getIn1();
+    bool getIn2();
+    bool getIn3();
+    bool getIn4();
+    bool getIn5();
+    bool getIn6();
+    bool getIn7();
+    bool getIn8();
+    bool getIn9();
+    bool getIn10();
+    bool getIn(byte number);
+    bool getSpindelOnOff(bool forceDirectRead = false);
+    // setters / outputs
+    void setDirX(bool value);
+    void setDirY(bool value);
+    void setDirZ(bool value);
+    void setDirA(bool value);
+    void setDirB(bool value);
+    void setDirC(bool value);
 
-        void setENA(bool value);
-        void setOut1(bool value);
-        void setOut2(bool value);
-        void setOut3(bool value);
-        void setOut4(bool value);
-        // DAC
-        #ifdef ESP_HANDWHEEL
-        void resetJoySticksToDefaults();
-        void dacSetAllChannel(int value);
-        #endif
-        
-        // general
-        void writeDataBag(DATA_TO_CONTROL *data);
-};
-
-
-
-
+#if ESP_HANDWHEEL == true
+    void setSpeed1(bool value);
+    void setSpeed2(bool value);
+    void setAuswahlX(bool value);
+    void setAuswahlY(bool value);
+    void setAuswahlZ(bool value);
+    void setOK(bool value);
+    void setMotorStart(bool value);
+    void setProgrammStart(bool value);
+    void blinkPanelLED();
 #endif
+
+    void setENA(bool value);
+    void setOut1(bool value);
+    void setOut2(bool value);
+    void setOut3(bool value);
+    void setOut4(bool value);
+
+// DAC
+#if ESP_HANDWHEEL == true
+    void resetJoySticksToDefaults();
+    void dacSetAllChannel(int value);
+    void setFeedrate(int value);
+    void setRotationSpeed(int value);
+#endif
+
+    void setAllIOsRandom();
+
+    // general
+    void writeDataBag(DATA_TO_CONTROL *data);
+
+    void resetInterrupts();
+    void startBlinkRJ45LED();
+    void stopBlinkRJ45LED();
+
+    int getTemperature(byte number); // Number can be 0-4. 0 is the onboard sensor
+
+    bool IOInitialized = false;
+
+private:
+    // Task handler
+    static void ioControlTask(void *pvParameters);
+    static void ioPortTask(void *pvParameters);
+    TaskHandle_t ioPortTaskHandle;
+    TaskHandle_t ioControlTaskHandle;
+
+    // Temp sensors
+    int temperatures[5];
+    void readTemperatures();
+    uint32_t lastTemperatureRead = 20000;
+
+    LEDCONTROLLER panelLED = LEDCONTROLLER(ESP_PANEL_LED_PIN);
+    BOUNCE_INPUT bounceInputs[3] = {
+        {/* ioport */ 1, /* port */ IO1_ALARMALL, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ false, /* readInterval */ 1, /* debounce */ 10},
+        {/* ioport */ 1, /* port */ IO1_AUTOSQUARE, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ false, /* readInterval */ 1, /* debounce */ 10},
+        {/* ioport */ 2, /* port */ IO2_SPINDEL, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ false, /* readInterval */ 1, /* debounce */ 10}};
+    void updateBounceInputs();
+    void updateClientData();
+    void checkPCA9555();
+    uint32_t lastI2CCheck = 0;
+
+    uint32_t lastClientDataUpdate = 20000;
+};

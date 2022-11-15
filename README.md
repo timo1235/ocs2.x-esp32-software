@@ -14,8 +14,16 @@ Take a look at the `src/configuration` file for the configuration.
 - control the dac chip(analog outputs like joystck x....)
 - control the two PCA9555 chips (I/O port expander)
 - establish a Wifi connection to a handwheel and control the I/Os accordingly
+- autosquaring process
+
+## Safety implementations
+- Outputs are resettet if WiFi handwheel is not responding for some milliseconds
+- Autosquaring only starts after pressing the button for some time
+- 
 
 ## To be done
-- implement autosquaring functionalities
 - fine tuning of Wifi connections
 - read temperature sensors
+- save wifi clients and send ack or data
+- debounce reading of autosquare state
+- 
