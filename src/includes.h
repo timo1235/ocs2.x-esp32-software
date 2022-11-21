@@ -2,7 +2,7 @@
 #define ocs_includes_h
 
 // versioning
-#define OCS2_SOFTWARE_VERSION 1
+#define OCS2_SOFTWARE_VERSION 2
 
 #include <configuration.h>
 

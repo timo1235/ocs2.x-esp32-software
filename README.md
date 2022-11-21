@@ -15,15 +15,17 @@ Take a look at the `src/configuration` file for the configuration.
 - control the two PCA9555 chips (I/O port expander)
 - establish a Wifi connection to a handwheel and control the I/Os accordingly
 - autosquaring process
+- WiFi handling with several clients
 
 ## Safety implementations
 - Outputs are resettet if WiFi handwheel is not responding for some milliseconds
 - Autosquaring only starts after pressing the button for some time
-- 
+- Ignore requests from multiple ESP32 if they try to control the same Ouput - for example a joystick
 
-## To be done
-- fine tuning of Wifi connections
-- read temperature sensors
-- save wifi clients and send ack or data
-- debounce reading of autosquare state
-- 
+
+# Changelog
+## version 2
+- Added output 1-4 to be controlled by a remote handwheel
+
+## version 1
+- initial version

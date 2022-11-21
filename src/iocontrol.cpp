@@ -475,6 +475,18 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
         setENA(data->ena);
     }
 #endif
+    if(data->command.setOutput1) {
+        setOut1(data->output1);
+    }
+    if(data->command.setOutput2) {
+        setOut2(data->output2);
+    }
+    if(data->command.setOutput3) {
+        setOut3(data->output3);
+    }
+    if(data->command.setOutput4) {
+        setOut4(data->output4);
+    }
 }
 
 void IOCONTROL::setAllIOsRandom()
