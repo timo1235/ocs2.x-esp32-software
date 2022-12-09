@@ -18,7 +18,7 @@
 #define IOInterrupt2Pin 39
 
 // I2C Pins
-#if OCS2_VERSION == 4
+#if OCS2_VERSION == 4 || OCS2_VERSION == 5
 #define I2C_BUS_SDA 17 
 #define I2C_BUS_SCL 16
 #else 

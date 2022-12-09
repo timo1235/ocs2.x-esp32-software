@@ -102,6 +102,11 @@ void IOCONTROL::initPCA9555()
     ioport1.pinMode(IO1_OK, OUTPUT);
     ioport1.pinMode(IO1_MOTORSTART, OUTPUT);
     ioport1.pinMode(IO1_PROGRAMMSTART, OUTPUT);
+#if ESP_SET_ENA == true
+    ioport2.pinMode(IO2_ENA, OUTPUT);
+#else
+    ioport2.pinMode(IO2_ENA, INPUT);
+#endif // --- end ESP_SET_ENA
 #else
     ioport1.pinMode(IO1_SPEED1, INPUT);
     ioport1.pinMode(IO1_SPEED2, INPUT);
@@ -111,8 +116,8 @@ void IOCONTROL::initPCA9555()
     ioport1.pinMode(IO1_OK, INPUT);
     ioport1.pinMode(IO1_MOTORSTART, INPUT);
     ioport1.pinMode(IO1_PROGRAMMSTART, INPUT);
-
-#endif
+    ioport2.pinMode(IO2_ENA, INPUT);
+#endif // --- end ESP_HANDWHEEL
     ioport1.pinMode(IO1_ALARMALL, INPUT);
     ioport1.pinMode(IO1_AUTOSQUARE, INPUT);
 
@@ -132,9 +137,6 @@ void IOCONTROL::initPCA9555()
     ioport2.pinMode(IO2_OUT2, OUTPUT);
     ioport2.pinMode(IO2_OUT3, OUTPUT);
     ioport2.pinMode(IO2_OUT4, OUTPUT);
-
-    // ioport2.pinMode(IO2_ENA, INPUT);
-    ioport2.pinMode(IO2_ENA, OUTPUT);
 
     setOut1(LOW);
     setOut2(LOW);
@@ -390,7 +392,14 @@ void IOCONTROL::setProgrammStart(bool value)
 #endif // ESP_HANDWHEEL == true
 void IOCONTROL::setENA(bool value)
 {
+#if ESP_SET_ENA == false
+    return;
+#endif // ESP_SET_ENA == false
+#if REVERSE_ENA_STATE == true
+    ioport2.digitalWrite(IO2_ENA, !value);
+#else
     ioport2.digitalWrite(IO2_ENA, value);
+#endif // --- end REVERSE_ENA_STATE
 }
 void IOCONTROL::setOut1(bool value)
 {
@@ -410,7 +419,7 @@ void IOCONTROL::setOut4(bool value)
 }
 
 // DAC functions
-#if  ESP_HANDWHEEL == true
+#if ESP_HANDWHEEL == true
 void IOCONTROL::resetJoySticksToDefaults()
 {
     dac.analogWrite(DAC_JOYSTICK_RESET_VALUE, DAC_JOYSTICK_X);
@@ -475,16 +484,20 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
         setENA(data->ena);
     }
 #endif
-    if(data->command.setOutput1) {
+    if (data->command.setOutput1)
+    {
         setOut1(data->output1);
     }
-    if(data->command.setOutput2) {
+    if (data->command.setOutput2)
+    {
         setOut2(data->output2);
     }
-    if(data->command.setOutput3) {
+    if (data->command.setOutput3)
+    {
         setOut3(data->output3);
     }
-    if(data->command.setOutput4) {
+    if (data->command.setOutput4)
+    {
         setOut4(data->output4);
     }
 }
@@ -541,23 +554,6 @@ bool IOCONTROL::getIn(byte number)
         return false;
         break;
     }
-}
-
-void IOCONTROL::resetInterrupts()
-{
-    // for (byte i = 0; i < 15; i++)
-    // {
-    //     DPRINT(i);
-    //     DPRINT(": ");
-    //     DPRINT(ioport1.stateOfPin(i));
-    //     DPRINT(" | ");
-
-    //     // ioport1.pinStates();
-    //     // ioport2.stateOfPin(i);
-    // }
-    // DPRINT("IO16: ");
-    // DPRINT(getAutosquare());
-    // DPRINTLN("");
 }
 
 void IOCONTROL::readTemperatures()

@@ -9,21 +9,42 @@
 // Use this ESP32 for controlling the handwheel inputs like Joystick, Programm Start, Motor start, etc.
 // True = ESP32 is used for handwheel inputs
 // False = ESP32 is not used for handwheel inputs
+// Default: true
 #define ESP_HANDWHEEL true
+
+// Use this ESP32 for enabling/disabling the stepper drivers
+// Should be set to false, if the controller board is used for ENA, like the GRBL Controller.
+// Should also be set to false, if there is a wired handwheel for controlling the ENA state. For example
+// if the panelModule breakout or panelModule D-SUB25 is used.
+// This config option only has an effect if ESP_HANDWHEEL is set to true.
+// True = ESP32 is used for stepper driver enable/disable - ENA
+// False = ESP32 is not used for stepper driver enable/disable - ENA
+// Default: true
+#define ESP_SET_ENA true
+
+// Resverse the ENA state for the stepper drivers
+// This is needed for some stepper drivers.
+// True = When ENA is LOW the stepper drivers are disabled
+// False = When ENA is high the stepper drivers are disabled - DRV8825/TMC2209v3.1
+// Default: false
+#define REVERSE_ENA_STATE false
 
 // Used to invert some outputs, since for example estlcam has pullups on its inputs. That means 
 // a signal of 0V is interpreted as 5V and vice versa.
 // Affectcs the following outputs: 
 // Programm Start, Motor Start, OK, SelectAxisX, Y, and Z, Speed1, Speed2
+// Default: true
 #define OUTPUTS_INVERTED true
 
 // This is the new mac address of this ESP32 and has to be matched by remote ESP32s
+// Default: 0x5E, 0x0, 0x0, 0x0, 0x0, 0x1
 #define CONTROLLER_MAC_ADDRESS        \
     {                                 \
         0x5E, 0x0, 0x0, 0x0, 0x0, 0x1 \
     }
 
 // Enable debug output over the serial monitor with a baud of 115200
+// Default: true
 #define OCS_DEBUG true
 
 //===========================================================================
@@ -31,9 +52,11 @@
 //===========================================================================
 // AUTOSQUARE_CONFIG config1 = {}
 // Comment to prevent the stepper from driving off the endshop when autosquaring has finished
+// Default: true
 #define DRIVE_FROM_ENDSTOP_AFTER_AUTOSQUARE true
 // How long needs the autosquare button to be pressed before starting autosquaring
 // This is a safety setting. So that autosquare is not started by accident
+// Default: 1500
 #define AUTOSQUARE_BUTTON_PRESS_TIME_MS 1500
 
 //===========================================================================
@@ -43,6 +66,7 @@
 // as step/s².
 // If for example the speed should ramp up from 0 to 10000 steps/s within
 // 10s, then the acceleration is 10000 steps/s / 10s = 1000 steps/s²
+// Default: 50000
 #define STEPPER_ACCELERATION 50000
 
 //--- Axis configuration for autosquare ---
