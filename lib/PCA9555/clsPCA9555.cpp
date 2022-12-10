@@ -67,7 +67,7 @@ bool PCA9555::begin(byte SDAPin, byte SCLPin)
         attachInterrupt(digitalPinToInterrupt(_interruptPin), PCA9555::alertISR, LOW); // Set to low for button presses
     }
 
-    Wire.begin(21, 22, (uint32_t) 400000); // start I2C communication
+    Wire.begin(SDAPin, SCLPin, (uint32_t) 400000); // start I2C communication
 
     Wire.beginTransmission(_address);
     Wire.write(0x02); // Test Address
