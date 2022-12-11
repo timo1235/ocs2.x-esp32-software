@@ -25,5 +25,3 @@
 #define I2C_BUS_SDA 21
 #define I2C_BUS_SCL 22
 #endif
-
-

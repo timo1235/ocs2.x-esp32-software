@@ -112,9 +112,9 @@ bool PROTOCOL::addPeerIfNotExists(uint8_t *address)
         return false;
     }
 
-    DPRINT("Wifi: Adding peer: ");
+    DPRINT("Wifi: Adding peer with MAC: ");
     DPRINT(PROTOCOL::getMacStrFromAddress(address));
-    DPRINTLN(" to the peer list");
+    DPRINTLN(", intAddress: "+String(PROTOCOL::getIntegerFromAddress(address))+" to the peer list");
 
     PROTOCOL::clients[PROTOCOL::clientCount].integerAddress = PROTOCOL::getIntegerFromAddress(address);
     memcpy(PROTOCOL::clients[PROTOCOL::clientCount].macAddress, address, 6);
@@ -239,7 +239,7 @@ void PROTOCOL::sendIgnoreMessageToClient(CLIENT_DATA *client, bool silent)
     esp_err_t success = PROTOCOL::sendMessageToClient(client->macAddress, &data);   
     if (!silent)
     {
-        DPRINTLN("Wifi: Client tried to control an output that is already controlled by another client. Aborting and ignoring the client in future requests.");
+        DPRINTLN("Wifi: Client "+ String(PROTOCOL::getMacStrFromAddress(client->macAddress)) + " tried to control an output that is already controlled by another client. Aborting and ignoring the client in future requests.");
         if (success != ESP_OK)
         {
             DPRINTLN("Wifi: Error: Could not inform client about the problem");
@@ -444,14 +444,14 @@ char *PROTOCOL::getMacStrFromAddress(uint8_t *address)
 
 uint16_t PROTOCOL::getIntegerFromAddress(const uint8_t *address)
 {
-    ArrayToInteger converter;
-    converter.address[0] = address[0];
-    converter.address[1] = address[1];
-    converter.address[2] = address[2];
-    converter.address[3] = address[3];
-    converter.address[4] = address[4];
-    converter.address[5] = address[5];
-    return converter.integer;
+    uint16_t integer = 0;
+    integer += address[0];
+    integer += address[1];
+    integer += address[2];
+    integer += address[3];
+    integer += address[4];
+    integer += address[5];
+    return integer;
 }
 
 void PROTOCOL::dumpDataToControl()
