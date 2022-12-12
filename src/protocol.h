@@ -42,6 +42,10 @@ typedef struct
     unsigned setMotorStart : 1;
     unsigned setSpeed1 : 1;
     unsigned setSpeed2 : 1;
+    unsigned setOutput1 : 1;
+    unsigned setOutput2 : 1;
+    unsigned setOutput3 : 1;
+    unsigned setOutput4 : 1;
     uint32_t lastSeen;
     uint32_t sendMessageFailCount;
     uint32_t sendMessageFailSuccessivelyCount;
@@ -107,11 +111,6 @@ typedef struct
     AUTOSQUARE_STATE autosquareState[3];
 } DATA_TO_CLIENT;
 
-union ArrayToInteger {
-  byte address[6];
-  uint16_t integer;
-};
-
 class PROTOCOL
 {
 public:
@@ -135,6 +134,7 @@ private:
     static bool validateClientCommand(CLIENT_DATA *client, DATA_TO_CONTROL *data, bool isNewClient);
     static void sendIgnoreMessageToClient(CLIENT_DATA *client, bool silent);
     static void resetOutputsControlledByClient(CLIENT_DATA *client);
+    static void setDataAccordingToCommand(CLIENT_DATA *client, DATA_TO_CONTROL *incomingDataToControl);
 
     static void protocolTaskHandler(void *pvParameters);
     TaskHandle_t protocolTask;

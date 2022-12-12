@@ -157,7 +157,9 @@ void PROTOCOL::onDataRecv(const uint8_t *address, const uint8_t *incomingData, i
             // Only use the data if the client is not ignored
             if (!PROTOCOL::clients[i].ignored)
             {
-                memcpy(&dataToControl, incomingData, sizeof(dataToControl));
+                DATA_TO_CONTROL tempDataToControl = {};
+                memcpy(&tempDataToControl, incomingData, sizeof(dataToControl));
+                PROTOCOL::setDataAccordingToCommand(&PROTOCOL::clients[i], &tempDataToControl);
                 PROTOCOL::clients[i].active = 1;
             }
             else
@@ -176,6 +178,78 @@ void PROTOCOL::onDataRecv(const uint8_t *address, const uint8_t *incomingData, i
     }
 }
 
+// This is where the incoming data is saved to the dataToControl variable
+void PROTOCOL::setDataAccordingToCommand(CLIENT_DATA *client, DATA_TO_CONTROL *incomingDataToControl) 
+{
+    if (client->setJoystick)
+    {
+        dataToControl.joystickX = incomingDataToControl->joystickX;
+        dataToControl.joystickY = incomingDataToControl->joystickY;
+        dataToControl.joystickZ = incomingDataToControl->joystickZ;
+    }
+    if (client->setFeedrate)
+    {
+        dataToControl.feedrate = incomingDataToControl->feedrate;
+    }
+    if (client->setRotationSpeed)
+    {
+        dataToControl.rotationSpeed = incomingDataToControl->rotationSpeed;
+    }
+    if (client->setAutosquare)
+    {
+        dataToControl.autosquare = incomingDataToControl->autosquare;
+    }
+    if (client->setEna)
+    {
+        dataToControl.ena = incomingDataToControl->ena;
+    }
+    if (client->setAxisSelect)
+    {
+        dataToControl.selectAxisX = incomingDataToControl->selectAxisX;
+        dataToControl.selectAxisY = incomingDataToControl->selectAxisY;
+        dataToControl.selectAxisZ = incomingDataToControl->selectAxisZ;
+    }
+    if (client->setOk)
+    {
+        dataToControl.ok = incomingDataToControl->ok;
+    }
+    if (client->setProgrammStart)
+    {
+        dataToControl.programmStart = incomingDataToControl->programmStart;
+    }
+    if (client->setMotorStart)
+    {
+        dataToControl.motorStart = incomingDataToControl->motorStart;
+    }
+    if (client->setSpeed1)
+    {
+        dataToControl.speed1 = incomingDataToControl->speed1;
+    }
+    if (client->setSpeed2)
+    {
+        dataToControl.speed2 = incomingDataToControl->speed2;
+    }
+    if (client->setOutput1)
+    {
+        dataToControl.output1 = incomingDataToControl->output1;
+    }
+    if (client->setOutput2)
+    {
+        dataToControl.output2 = incomingDataToControl->output2;
+    }
+    if (client->setOutput3)
+    {
+        dataToControl.output3 = incomingDataToControl->output3;
+    }
+    if (client->setOutput4)
+    {
+        dataToControl.output4 = incomingDataToControl->output4;
+    }
+    dataToControl.command = incomingDataToControl->command;
+    dataToControl.softwareVersion = incomingDataToControl->softwareVersion;
+}
+
+// This is called when a client timed out. All outputs controlled by the client are reset to default
 void PROTOCOL::resetOutputsControlledByClient(CLIENT_DATA *client)
 {
     DPRINT("Wifi: Resetting outputs controlled by peer with address: ");
@@ -226,6 +300,22 @@ void PROTOCOL::resetOutputsControlledByClient(CLIENT_DATA *client)
     if (client->setSpeed2)
     {
         ioControl.setSpeed2(0);
+    }
+    if (client->setOutput1)
+    {
+        ioControl.setOut1(0);
+    }
+    if (client->setOutput2)
+    {
+        ioControl.setOut2(0);
+    }
+    if (client->setOutput3)
+    {
+        ioControl.setOut3(0);
+    }
+    if (client->setOutput4)
+    {
+        ioControl.setOut4(0);
     }
 }
 
@@ -396,6 +486,54 @@ bool PROTOCOL::validateClientCommand(CLIENT_DATA *client, DATA_TO_CONTROL *data,
         else
         {
             DPRINTLN("Wifi: Error: Speed 2 is already controlled by another client");
+            shouldBeIgnored = true;
+        }
+    }
+    if (data->command.setOutput1)
+    {
+        if (!PROTOCOL::currentControls.setOutput1)
+        {
+            PROTOCOL::currentControls.setOutput1 = true;
+        }
+        else
+        {
+            DPRINTLN("Wifi: Error: Output1 is already controlled by another client");
+            shouldBeIgnored = true;
+        }
+    }
+    if (data->command.setOutput2)
+    {
+        if (!PROTOCOL::currentControls.setOutput2)
+        {
+            PROTOCOL::currentControls.setOutput2 = true;
+        }
+        else
+        {
+            DPRINTLN("Wifi: Error: Output2 is already controlled by another client");
+            shouldBeIgnored = true;
+        }
+    }
+    if (data->command.setOutput3)
+    {
+        if (!PROTOCOL::currentControls.setOutput3)
+        {
+            PROTOCOL::currentControls.setOutput3 = true;
+        }
+        else
+        {
+            DPRINTLN("Wifi: Error: Output3 is already controlled by another client");
+            shouldBeIgnored = true;
+        }
+    }
+    if (data->command.setOutput4)
+    {
+        if (!PROTOCOL::currentControls.setOutput4)
+        {
+            PROTOCOL::currentControls.setOutput4 = true;
+        }
+        else
+        {
+            DPRINTLN("Wifi: Error: Output4 is already controlled by another client");
             shouldBeIgnored = true;
         }
     }

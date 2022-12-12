@@ -56,13 +56,10 @@ void STEPPERCONTROL::stepperTaskHandler(void *pvParameters)
 
 bool STEPPERCONTROL::getAutosquareButtonState()
 {
-    bool wifiAutosquareButtonState = false;
     // Read hardware pin for autosquare button - skip debouncing if autosquare is running
     bool directAutosquareButtonState = this->autosquareRunning ? ioControl.getAutosquare(true) : ioControl.getAutosquare();
-    if (dataToControl.command.setAutosquare)
-    {
-        wifiAutosquareButtonState = dataToControl.autosquare;
-    }
+    // Read autosquare button state from wifi
+    bool wifiAutosquareButtonState = dataToControl.autosquare;
 
     return wifiAutosquareButtonState || directAutosquareButtonState;
 }
