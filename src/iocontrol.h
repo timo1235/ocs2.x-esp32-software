@@ -132,9 +132,9 @@ public:
     void dacSetAllChannel(int value);
     void setFeedrate(int value);
     void setRotationSpeed(int value);
+    void setAllIOsRandom();
 #endif
 
-    void setAllIOsRandom();
 
     // general
     void writeDataBag(DATA_TO_CONTROL *data);

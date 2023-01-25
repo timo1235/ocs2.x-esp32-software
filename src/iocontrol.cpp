@@ -501,7 +501,7 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
         setOut4(data->output4);
     }
 }
-
+#if ESP_HANDWHEEL == true
 void IOCONTROL::setAllIOsRandom()
 {
     setAuswahlX(random(0, 1));
@@ -512,6 +512,7 @@ void IOCONTROL::setAllIOsRandom()
     setMotorStart(random(0, 1));
     setProgrammStart(random(0, 1));
 }
+#endif // ESP_HANDWHEEL == true
 
 /**
  * @param number Number of the input. Possible values are 1-10.

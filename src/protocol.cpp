@@ -114,7 +114,7 @@ bool PROTOCOL::addPeerIfNotExists(uint8_t *address)
 
     DPRINT("Wifi: Adding peer with MAC: ");
     DPRINT(PROTOCOL::getMacStrFromAddress(address));
-    DPRINTLN(", intAddress: "+String(PROTOCOL::getIntegerFromAddress(address))+" to the peer list");
+    DPRINTLN(", intAddress: " + String(PROTOCOL::getIntegerFromAddress(address)) + " to the peer list");
 
     PROTOCOL::clients[PROTOCOL::clientCount].integerAddress = PROTOCOL::getIntegerFromAddress(address);
     memcpy(PROTOCOL::clients[PROTOCOL::clientCount].macAddress, address, 6);
@@ -179,7 +179,7 @@ void PROTOCOL::onDataRecv(const uint8_t *address, const uint8_t *incomingData, i
 }
 
 // This is where the incoming data is saved to the dataToControl variable
-void PROTOCOL::setDataAccordingToCommand(CLIENT_DATA *client, DATA_TO_CONTROL *incomingDataToControl) 
+void PROTOCOL::setDataAccordingToCommand(CLIENT_DATA *client, DATA_TO_CONTROL *incomingDataToControl)
 {
     if (client->setJoystick)
     {
@@ -255,6 +255,12 @@ void PROTOCOL::resetOutputsControlledByClient(CLIENT_DATA *client)
     DPRINT("Wifi: Resetting outputs controlled by peer with address: ");
     DPRINTLN(PROTOCOL::getMacStrFromAddress(client->macAddress));
 
+    if (client->setEna)
+    {
+        ioControl.setENA(0);
+    }
+#if ESP_HANDWHEEL == true
+
     if (client->setJoystick)
     {
         ioControl.resetJoySticksToDefaults();
@@ -270,10 +276,6 @@ void PROTOCOL::resetOutputsControlledByClient(CLIENT_DATA *client)
     if (client->setAutosquare)
     {
         dataToControl.autosquare = 0;
-    }
-    if (client->setEna)
-    {
-        ioControl.setENA(0);
     }
     if (client->setAxisSelect)
     {
@@ -317,6 +319,7 @@ void PROTOCOL::resetOutputsControlledByClient(CLIENT_DATA *client)
     {
         ioControl.setOut4(0);
     }
+#endif // ESP_HANDWHEEL == true
 }
 
 void PROTOCOL::sendIgnoreMessageToClient(CLIENT_DATA *client, bool silent)
@@ -326,10 +329,10 @@ void PROTOCOL::sendIgnoreMessageToClient(CLIENT_DATA *client, bool silent)
     DATA_TO_CLIENT data = {};
     memcpy(&data, &dataToClient, sizeof(dataToClient));
     data.peerIgnored = true;
-    esp_err_t success = PROTOCOL::sendMessageToClient(client->macAddress, &data);   
+    esp_err_t success = PROTOCOL::sendMessageToClient(client->macAddress, &data);
     if (!silent)
     {
-        DPRINTLN("Wifi: Client "+ String(PROTOCOL::getMacStrFromAddress(client->macAddress)) + " tried to control an output that is already controlled by another client. Aborting and ignoring the client in future requests.");
+        DPRINTLN("Wifi: Client " + String(PROTOCOL::getMacStrFromAddress(client->macAddress)) + " tried to control an output that is already controlled by another client. Aborting and ignoring the client in future requests.");
         if (success != ESP_OK)
         {
             DPRINTLN("Wifi: Error: Could not inform client about the problem");
@@ -353,7 +356,8 @@ bool PROTOCOL::validateClientCommand(CLIENT_DATA *client, DATA_TO_CONTROL *data,
     }
 
     // Skip check if the client is already known
-    if(!isNewClient) {
+    if (!isNewClient)
+    {
         return true;
     }
 
