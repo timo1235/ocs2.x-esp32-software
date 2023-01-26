@@ -563,6 +563,10 @@ void PROTOCOL::updateClientData(CLIENT_DATA *client, DATA_TO_CONTROL *data, bool
     client->setSpeed1 = data->command.setSpeed1;
     client->setSpeed2 = data->command.setSpeed2;
     client->updateInterval_MS = data->command.updateInterval_MS;
+    client->setOutput1 = data->command.setOutput1;
+    client->setOutput2 = data->command.setOutput2;
+    client->setOutput3 = data->command.setOutput3;
+    client->setOutput4 = data->command.setOutput4;
     PROTOCOL::validateClientCommand(client, data, isNewClient);
 }
 

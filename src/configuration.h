@@ -102,10 +102,10 @@
 #define AXIS3_ACTIVE false
 #if AXIS3_ACTIVE
 #define AXIS3_MOTOR1 AXIS::z // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
-#define AXIS3_MOTOR1_ENDSTOP_INPUT 6 // Can be a number between 1 and 10 for input 1-10
+#define AXIS3_MOTOR1_ENDSTOP_INPUT 5 // Can be a number between 1 and 10 for input 1-10
 #define AXIS3_MOTOR1_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
 #define AXIS3_MOTOR2 AXIS::c // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
-#define AXIS3_MOTOR2_ENDSTOP_INPUT 7 // Can be a number between 1 and 10 for input 1-10
+#define AXIS3_MOTOR2_ENDSTOP_INPUT 6 // Can be a number between 1 and 10 for input 1-10
 #define AXIS3_MOTOR2_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
 #define AXIS3_STEPS_PER_REVOLUTION 1600 // How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
 #define AXIS3_MM_PER_REVOLUTION 10 // How many mm has the machine moved after one turn.
