@@ -80,7 +80,7 @@
 #define AXIS1_MOTOR2_ENDSTOP_INPUT 2 // Can be a number between 1 and 10 for input 1-10
 #define AXIS1_MOTOR2_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
 #define AXIS1_STEPS_PER_REVOLUTION 1600 // How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
-#define AXIS1_MM_PER_REVOLUTION 10 // How many mm has the machine moved after one turn.
+#define AXIS1_MM_PER_REVOLUTION 32 // How many mm has the machine moved after one turn.
 #define AXIS1_AS_SPEED_MM_S 20 // The speed for autosquaring in mm/s
 #define AXIS1_REVERSE_MOTOR_DIRECTION false // Lets the motors rotate counter clockwise
 #endif
@@ -108,7 +108,7 @@
 #define AXIS3_MOTOR2_ENDSTOP_INPUT 6 // Can be a number between 1 and 10 for input 1-10
 #define AXIS3_MOTOR2_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
 #define AXIS3_STEPS_PER_REVOLUTION 1600 // How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
-#define AXIS3_MM_PER_REVOLUTION 10 // How many mm has the machine moved after one turn.
+#define AXIS3_MM_PER_REVOLUTION 32 // How many mm has the machine moved after one turn.
 #define AXIS3_AS_SPEED_MM_S 20 // The speed for autosquaring in mm/s
 #define AXIS3_REVERSE_MOTOR_DIRECTION false // Lets the motors rotate counter clockwise
 #endif
