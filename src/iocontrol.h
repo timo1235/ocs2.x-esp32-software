@@ -88,17 +88,17 @@ public:
     // getters / inputs
     bool getAlarmAll(bool forceDirectRead = false);
     bool getAutosquare(bool forceDirectRead = false);
-    bool getIn1();
-    bool getIn2();
-    bool getIn3();
-    bool getIn4();
-    bool getIn5();
-    bool getIn6();
-    bool getIn7();
-    bool getIn8();
-    bool getIn9();
-    bool getIn10();
-    bool getIn(byte number);
+    bool getIn1(bool invert = false);
+    bool getIn2(bool invert = false);
+    bool getIn3(bool invert = false);
+    bool getIn4(bool invert = false);
+    bool getIn5(bool invert = false);
+    bool getIn6(bool invert = false);
+    bool getIn7(bool invert = false);
+    bool getIn8(bool invert = false);
+    bool getIn9(bool invert = false);
+    bool getIn10(bool invert = false);
+    bool getIn(byte number, bool invert = false);
     bool getSpindelOnOff(bool forceDirectRead = false);
     // setters / outputs
     void setDirX(bool value);

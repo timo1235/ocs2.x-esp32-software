@@ -67,8 +67,10 @@ bool STEPPERCONTROL::getAutosquareButtonState()
 void STEPPERCONTROL::addAxis(
     AXIS motor1,
     byte motor1EndstopInput,
+    bool motor1EndstopInverted,
     AXIS motor2,
     byte motor2EndstopInput,
+    bool motor2EndstopInverted,
     uint16_t stepsPerRevolution,
     uint16_t mmPerRevolution,
     uint16_t asSpeed_mm_s,
@@ -87,9 +89,11 @@ void STEPPERCONTROL::addAxis(
     autosquareConfigs[index].active = true;
     autosquareConfigs[index].motor1 = motor1;
     autosquareConfigs[index].motor1EndstopInput = motor1EndstopInput;
+    autosquareConfigs[index].motor1EndstopInverted = motor1EndstopInverted;
     autosquareConfigs[index].motor1ASState = none;
     autosquareConfigs[index].motor2 = motor2;
     autosquareConfigs[index].motor2EndstopInput = motor2EndstopInput;
+    autosquareConfigs[index].motor2EndstopInverted = motor2EndstopInverted;
     autosquareConfigs[index].motor2ASState = none;
     autosquareConfigs[index].stepsPerRevolution = stepsPerRevolution;
     autosquareConfigs[index].mmPerRevolution = mmPerRevolution;
@@ -166,7 +170,7 @@ void STEPPERCONTROL::autosquareProcess()
             // Check endstop for axis/motor
             if (autosquareConfigs[i].motor1ASState != AS_STATES::squared)
             {
-                if (ioControl.getIn(autosquareConfigs[i].motor1EndstopInput))
+                if (ioControl.getIn(autosquareConfigs[i].motor1EndstopInput, autosquareConfigs[i].motor1EndstopInverted))
                 {
                     DPRINT("Autosquare: Squared motor1 - axis: ");
                     DPRINTLN(autosquareConfigs[i].motor1);
@@ -182,7 +186,7 @@ void STEPPERCONTROL::autosquareProcess()
             // Check endstop for axis/motor
             if (autosquareConfigs[i].motor2ASState != AS_STATES::squared)
             {
-                if (ioControl.getIn(autosquareConfigs[i].motor2EndstopInput))
+                if (ioControl.getIn(autosquareConfigs[i].motor2EndstopInput, autosquareConfigs[i].motor2EndstopInverted))
                 {
                     DPRINT("Autosquare: Squared motor2 - axis: ");
                     DPRINTLN(autosquareConfigs[i].motor2);
@@ -242,7 +246,7 @@ void STEPPERCONTROL::autosquareProcess()
             // Check endstop for axis/motor
             if (autosquareConfigs[i].motor1ASState != AS_STATES::finish)
             {
-                if (!ioControl.getIn(autosquareConfigs[i].motor1EndstopInput))
+                if (!ioControl.getIn(autosquareConfigs[i].motor1EndstopInput, autosquareConfigs[i].motor1EndstopInverted))
                 {
                     DPRINT("Autosquare: Finished motor1 - axis: ");
                     DPRINTLN(autosquareConfigs[i].motor1);
@@ -258,7 +262,7 @@ void STEPPERCONTROL::autosquareProcess()
             // Check endstop for axis/motor
             if (autosquareConfigs[i].motor2ASState != AS_STATES::finish)
             {
-                if (!ioControl.getIn(autosquareConfigs[i].motor2EndstopInput))
+                if (!ioControl.getIn(autosquareConfigs[i].motor2EndstopInput, autosquareConfigs[i].motor2EndstopInverted))
                 {
                     DPRINT("Autosquare: Finished motor2 - axis: ");
                     DPRINTLN(autosquareConfigs[i].motor2);
