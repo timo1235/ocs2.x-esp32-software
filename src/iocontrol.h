@@ -5,7 +5,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <pinmap.h>
-#include <LEDcontroller.h>
+#include <LEDController.h>
 
 #define PCA9555_ADRESS_1 0x20
 #define PCA9555_ADRESS_2 0x24
