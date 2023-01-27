@@ -30,9 +30,11 @@ enum AXIS
 /**
  * @param motor1                    Can be x,y,z,a,b or c
  * @param motor1EndstopInput        Can be a number between 1 and 10 for input 1-10
+ * @param motor1EndstopInverted     False for normally open endstops and true for normally closed endstops
  * @param motor1ASState
  * @param motor2                    Can be x,y,z,a,b or c
  * @param motor2EndstopInput        Can be a number between 1 and 10 for input 1-10
+ * @param motor2EndstopInverted     False for normally open endstops and true for normally closed endstops
  * @param motor2ASState
  * @param stepsPerRevolution        How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
  * @param mmPerRevolution           How many mm has the machine moved after one turn.
@@ -44,9 +46,11 @@ typedef struct
     bool active;
     AXIS motor1;
     byte motor1EndstopInput;
+    bool motor1EndstopInverted;
     AS_STATES motor1ASState;
     AXIS motor2;
     byte motor2EndstopInput;
+    bool motor2EndstopInverted;
     AS_STATES motor2ASState;
     uint16_t stepsPerRevolution;
     uint16_t mmPerRevolution;
@@ -62,8 +66,10 @@ public:
     void addAxis(
         AXIS motor1,
         byte motor1EndstopInput,
+        bool motor1EndstopInverted,
         AXIS motor2,
         byte motor2EndstopInput,
+        bool motor2EndstopInverted,
         uint16_t stepsPerRevolution,
         uint16_t mmPerRevolution,
         uint16_t asSpeed_mm_s,

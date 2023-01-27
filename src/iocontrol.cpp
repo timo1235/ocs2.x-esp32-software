@@ -248,46 +248,48 @@ bool IOCONTROL::getAutosquare(bool forceDirectRead)
         return !this->bounceInputs[1].state;
     }
 }
-bool IOCONTROL::getIn1()
+
+bool IOCONTROL::getIn1(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN1) : ioport2.stateOfPin(IO2_IN1);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN1) : ioport2.stateOfPin(IO2_IN1);
 }
-bool IOCONTROL::getIn2()
+bool IOCONTROL::getIn2(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN2) : ioport2.stateOfPin(IO2_IN2);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN2) : ioport2.stateOfPin(IO2_IN2);
 }
-bool IOCONTROL::getIn3()
+bool IOCONTROL::getIn3(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN3) : ioport2.stateOfPin(IO2_IN3);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN3) : ioport2.stateOfPin(IO2_IN3);
 }
-bool IOCONTROL::getIn4()
+bool IOCONTROL::getIn4(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN4) : ioport2.stateOfPin(IO2_IN4);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN4) : ioport2.stateOfPin(IO2_IN4);
 }
-bool IOCONTROL::getIn5()
+bool IOCONTROL::getIn5(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN5) : ioport2.stateOfPin(IO2_IN5);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN5) : ioport2.stateOfPin(IO2_IN5);
 }
-bool IOCONTROL::getIn6()
+bool IOCONTROL::getIn6(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN6) : ioport2.stateOfPin(IO2_IN6);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN6) : ioport2.stateOfPin(IO2_IN6);
 }
-bool IOCONTROL::getIn7()
+bool IOCONTROL::getIn7(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN7) : ioport2.stateOfPin(IO2_IN7);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN7) : ioport2.stateOfPin(IO2_IN7);
 }
-bool IOCONTROL::getIn8()
+bool IOCONTROL::getIn8(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN8) : ioport2.stateOfPin(IO2_IN8);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN8) : ioport2.stateOfPin(IO2_IN8);
 }
-bool IOCONTROL::getIn9()
+bool IOCONTROL::getIn9(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN9) : ioport2.stateOfPin(IO2_IN9);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN9) : ioport2.stateOfPin(IO2_IN9);
 }
-bool IOCONTROL::getIn10()
+bool IOCONTROL::getIn10(bool invert)
 {
-    return REVERSE_INPUTS ? !ioport2.stateOfPin(IO2_IN10) : ioport2.stateOfPin(IO2_IN10);
+    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN10) : ioport2.stateOfPin(IO2_IN10);
 }
+
 bool IOCONTROL::getSpindelOnOff(bool forceDirectRead)
 {
     if (forceDirectRead)
@@ -517,39 +519,39 @@ void IOCONTROL::setAllIOsRandom()
 /**
  * @param number Number of the input. Possible values are 1-10.
  */
-bool IOCONTROL::getIn(byte number)
+bool IOCONTROL::getIn(byte number, bool invert)
 {
     switch (number)
     {
     case 1:
-        return getIn1();
+        return getIn1(invert);
         break;
     case 2:
-        return getIn2();
+        return getIn2(invert);
         break;
     case 3:
-        return getIn3();
+        return getIn3(invert);
         break;
     case 4:
-        return getIn4();
+        return getIn4(invert);
         break;
     case 5:
-        return getIn5();
+        return getIn5(invert);
         break;
     case 6:
-        return getIn6();
+        return getIn6(invert);
         break;
     case 7:
-        return getIn7();
+        return getIn7(invert);
         break;
     case 8:
-        return getIn8();
+        return getIn8(invert);
         break;
     case 9:
-        return getIn9();
+        return getIn9(invert);
         break;
     case 10:
-        return getIn10();
+        return getIn10(invert);
         break;
     default:
         return false;
