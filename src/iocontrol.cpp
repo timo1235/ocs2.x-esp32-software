@@ -485,6 +485,14 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
     {
         setENA(data->ena);
     }
+    if(data->command.setSpeed1)
+    {
+        setSpeed1(data->speed1);
+    }
+    if(data->command.setSpeed2)
+    {
+        setSpeed2(data->speed2);
+    }
 #endif
     if (data->command.setOutput1)
     {
