@@ -10,7 +10,7 @@ The corresponding ESP32 software for the remote control can be found here: [OPEN
 ### Configuration
 Take a look at the `src/configuration` file for the configuration.
 
-## Features implemented so far
+## Features implemented
 - control the dac chip(analog outputs like joystck x....)
 - control the two PCA9555 chips (I/O port expander)
 - establish a Wifi connection to a handwheel and control the I/Os accordingly
@@ -24,8 +24,5 @@ Take a look at the `src/configuration` file for the configuration.
 
 
 # Changelog
-## version 2
-- Added output 1-4 to be controlled by a remote handwheel
-
-## version 1
-- initial version
+## 1.0.0
+- inital version
