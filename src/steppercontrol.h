@@ -48,10 +48,12 @@ typedef struct
     byte motor1EndstopInput;
     bool motor1EndstopInverted;
     AS_STATES motor1ASState;
+    float motor1DriveBackDistance_mm;
     AXIS motor2;
     byte motor2EndstopInput;
     bool motor2EndstopInverted;
     AS_STATES motor2ASState;
+    float motor2DriveBackDistance_mm;
     uint16_t stepsPerRevolution;
     uint16_t mmPerRevolution;
     uint16_t asSpeed_mm_s;
@@ -67,9 +69,11 @@ public:
         AXIS motor1,
         byte motor1EndstopInput,
         bool motor1EndstopInverted,
+        float motor1DriveBackDistance_mm,
         AXIS motor2,
         byte motor2EndstopInput,
         bool motor2EndstopInverted,
+        float motor2DriveBackDistance_mm,
         uint16_t stepsPerRevolution,
         uint16_t mmPerRevolution,
         uint16_t asSpeed_mm_s,

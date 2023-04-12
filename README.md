@@ -24,5 +24,9 @@ Take a look at the `src/configuration` file for the configuration.
 
 
 # Changelog
+## latest changes - not released
+- removed the configuration variable "DRIVE_FROM_ENDSTOP_AFTER_AUTOSQUARE" since this can now be controlled individually for every motor
+- added configuration for every autosquare motor to define the drive back distance after autosquaring
+
 ## 1.0.0
 - inital version

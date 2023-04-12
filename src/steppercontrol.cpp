@@ -68,9 +68,11 @@ void STEPPERCONTROL::addAxis(
     AXIS motor1,
     byte motor1EndstopInput,
     bool motor1EndstopInverted,
+    float motor1DriveBackDistance_mm,
     AXIS motor2,
     byte motor2EndstopInput,
     bool motor2EndstopInverted,
+    float motor2DriveBackDistance_mm,
     uint16_t stepsPerRevolution,
     uint16_t mmPerRevolution,
     uint16_t asSpeed_mm_s,
@@ -91,10 +93,12 @@ void STEPPERCONTROL::addAxis(
     autosquareConfigs[index].motor1EndstopInput = motor1EndstopInput;
     autosquareConfigs[index].motor1EndstopInverted = motor1EndstopInverted;
     autosquareConfigs[index].motor1ASState = none;
+    autosquareConfigs[index].motor1DriveBackDistance_mm = motor1DriveBackDistance_mm;
     autosquareConfigs[index].motor2 = motor2;
     autosquareConfigs[index].motor2EndstopInput = motor2EndstopInput;
     autosquareConfigs[index].motor2EndstopInverted = motor2EndstopInverted;
     autosquareConfigs[index].motor2ASState = none;
+    autosquareConfigs[index].motor2DriveBackDistance_mm = motor2DriveBackDistance_mm;
     autosquareConfigs[index].stepsPerRevolution = stepsPerRevolution;
     autosquareConfigs[index].mmPerRevolution = mmPerRevolution;
     autosquareConfigs[index].asSpeed_mm_s = asSpeed_mm_s;
@@ -201,7 +205,6 @@ void STEPPERCONTROL::autosquareProcess()
             }
         }
     }
-#if DRIVE_FROM_ENDSTOP_AFTER_AUTOSQUARE == true
     // Drive down from the endstops
     for (byte i = 0; i < sizeof(autosquareConfigs) / sizeof(AUTOSQUARE_CONFIG); i++)
     {
@@ -217,16 +220,15 @@ void STEPPERCONTROL::autosquareProcess()
         }
         setDirectionByAxisLabel(autosquareConfigs[i].motor1, autosquareConfigs[i].reverseMotorDirection ? HIGH : LOW);
         setDirectionByAxisLabel(autosquareConfigs[i].motor2, autosquareConfigs[i].reverseMotorDirection ? HIGH : LOW);
-        steppers[autosquareConfigs[i].motor1]->runForward();
-        steppers[autosquareConfigs[i].motor2]->runForward();
+        steppers[autosquareConfigs[i].motor1]->move(autosquareConfigs[i].motor1DriveBackDistance_mm * autosquareConfigs[i].stepsPerRevolution / autosquareConfigs[i].mmPerRevolution, false);
+        steppers[autosquareConfigs[i].motor2]->move(autosquareConfigs[i].motor2DriveBackDistance_mm * autosquareConfigs[i].stepsPerRevolution / autosquareConfigs[i].mmPerRevolution, false);
 
         DPRINT("Autosquare: Config: ");
         DPRINTLN(i);
-        DPRINT("Autosquare: Motor1 start drive from endstop - axis: ");
-        DPRINTLN(autosquareConfigs[i].motor1);
-        DPRINT("Autosquare: Motor2 start drive from endstop - axis: ");
-        DPRINTLN(autosquareConfigs[i].motor2);
+        DPRINTLN("Autosquare: Motor1 start drive from endstop - axis: " +  String(autosquareConfigs[i].motor1) + " - distance: " +  String(autosquareConfigs[i].motor1DriveBackDistance_mm));
+        DPRINTLN("Autosquare: Motor2 start drive from endstop - axis: " +  String(autosquareConfigs[i].motor2) + " - distance: " +  String(autosquareConfigs[i].motor2DriveBackDistance_mm));
     }
+
     allFinished = false;
     while (!allFinished)
     {
@@ -246,13 +248,12 @@ void STEPPERCONTROL::autosquareProcess()
             // Check endstop for axis/motor
             if (autosquareConfigs[i].motor1ASState != AS_STATES::finish)
             {
-                if (!ioControl.getIn(autosquareConfigs[i].motor1EndstopInput, autosquareConfigs[i].motor1EndstopInverted))
+                if (!steppers[autosquareConfigs[i].motor1]->isRunning())
                 {
                     DPRINT("Autosquare: Finished motor1 - axis: ");
                     DPRINTLN(autosquareConfigs[i].motor1);
                     autosquareConfigs[i].motor1ASState = AS_STATES::finish;
                     dataToClient.autosquareState[i].axisMotor1State = autosquareConfigs[i].motor1ASState;
-                    steppers[autosquareConfigs[i].motor1]->forceStopAndNewPosition(0);
                 }
                 else
                 {
@@ -262,13 +263,12 @@ void STEPPERCONTROL::autosquareProcess()
             // Check endstop for axis/motor
             if (autosquareConfigs[i].motor2ASState != AS_STATES::finish)
             {
-                if (!ioControl.getIn(autosquareConfigs[i].motor2EndstopInput, autosquareConfigs[i].motor2EndstopInverted))
+                if (!steppers[autosquareConfigs[i].motor2]->isRunning())
                 {
                     DPRINT("Autosquare: Finished motor2 - axis: ");
                     DPRINTLN(autosquareConfigs[i].motor2);
                     autosquareConfigs[i].motor2ASState = AS_STATES::finish;
                     dataToClient.autosquareState[i].axisMotor2State = autosquareConfigs[i].motor2ASState;
-                    steppers[autosquareConfigs[i].motor2]->forceStopAndNewPosition(0);
                 }
                 else
                 {
@@ -277,7 +277,6 @@ void STEPPERCONTROL::autosquareProcess()
             }
         }
     }
-#endif
 
     terminateAutosquare();
 };
@@ -381,12 +380,16 @@ void STEPPERCONTROL::printAutosquareConfig()
         DPRINT(autosquareConfigs[i].motor1EndstopInput);
         DPRINT("\tMotor1ASState: ");
         DPRINT(autosquareConfigs[i].motor1ASState);
+        DPRINT("\tMotor1DriveBackDistance: ");
+        DPRINT(autosquareConfigs[i].motor1DriveBackDistance_mm);
         DPRINT("\tMotor2: ");
         DPRINT(autosquareConfigs[i].motor2);
         DPRINT("\tMotor2EndstopInput: ");
         DPRINT(autosquareConfigs[i].motor2EndstopInput);
         DPRINT("\tMotor2ASState: ");
         DPRINT(autosquareConfigs[i].motor2ASState);
+        DPRINT("\tMotor2DriveBackDistance: ");
+        DPRINT(autosquareConfigs[i].motor2DriveBackDistance_mm);
         DPRINT("\tStepsPerRevolution: ");
         DPRINT(autosquareConfigs[i].stepsPerRevolution);
         DPRINT("\tMmPerRevolution: ");

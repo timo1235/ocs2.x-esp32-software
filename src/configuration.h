@@ -50,10 +50,6 @@
 //===========================================================================
 // *************************   Autosquare    ********************************
 //===========================================================================
-// AUTOSQUARE_CONFIG config1 = {}
-// Comment to prevent the stepper from driving off the endshop when autosquaring has finished
-// Default: true
-#define DRIVE_FROM_ENDSTOP_AFTER_AUTOSQUARE true
 // How long needs the autosquare button to be pressed before starting autosquaring
 // This is a safety setting. So that autosquare is not started by accident
 // Default: 1500
@@ -76,9 +72,11 @@
 #define AXIS1_MOTOR1 AXIS::x // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS1_MOTOR1_ENDSTOP_INPUT 1 // Can be a number between 1 and 10 for input 1-10
 #define AXIS1_MOTOR1_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS1_MOTOR1_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS1_MOTOR2 AXIS::a // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS1_MOTOR2_ENDSTOP_INPUT 2 // Can be a number between 1 and 10 for input 1-10
 #define AXIS1_MOTOR2_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS1_MOTOR2_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS1_STEPS_PER_REVOLUTION 1600 // How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
 #define AXIS1_MM_PER_REVOLUTION 32 // How many mm has the machine moved after one turn.
 #define AXIS1_AS_SPEED_MM_S 20 // The speed for autosquaring in mm/s
@@ -90,9 +88,11 @@
 #define AXIS2_MOTOR1 AXIS::y // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS2_MOTOR1_ENDSTOP_INPUT 3 // Can be a number between 1 and 10 for input 1-10
 #define AXIS2_MOTOR1_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS2_MOTOR1_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS2_MOTOR2 AXIS::b // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS2_MOTOR2_ENDSTOP_INPUT 4 // Can be a number between 1 and 10 for input 1-10
 #define AXIS2_MOTOR2_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS2_MOTOR2_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS2_STEPS_PER_REVOLUTION 1600 // How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
 #define AXIS2_MM_PER_REVOLUTION 32 // How many mm has the machine moved after one turn.
 #define AXIS2_AS_SPEED_MM_S 20 // The speed for autosquaring in mm/s
@@ -104,9 +104,11 @@
 #define AXIS3_MOTOR1 AXIS::z // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS3_MOTOR1_ENDSTOP_INPUT 5 // Can be a number between 1 and 10 for input 1-10
 #define AXIS3_MOTOR1_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS3_MOTOR1_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS3_MOTOR2 AXIS::c // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS3_MOTOR2_ENDSTOP_INPUT 6 // Can be a number between 1 and 10 for input 1-10
 #define AXIS3_MOTOR2_ENDSTOP_INVERTED true // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS3_MOTOR2_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS3_STEPS_PER_REVOLUTION 1600 // How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
 #define AXIS3_MM_PER_REVOLUTION 32 // How many mm has the machine moved after one turn.
 #define AXIS3_AS_SPEED_MM_S 20 // The speed for autosquaring in mm/s
