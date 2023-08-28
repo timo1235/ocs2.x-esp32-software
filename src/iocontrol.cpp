@@ -39,6 +39,15 @@ void IOCONTROL::setup()
         1,                        /* priority of the task */
         &ioControlTaskHandle,     /* Task handle to keep track of created task */
         1);
+    // Create a task for writing all outputs
+    xTaskCreatePinnedToCore(
+        IOCONTROL::writeOutputsTask, /* Task function. */
+        "IO Task",                   /* name of task. */
+        10000,                       /* Stack size of task */
+        this,                        /* parameter of the task */
+        1,                           /* priority of the task */
+        &writeOutputsTaskHandle,     /* Task handle to keep track of created task */
+        1);                          // Has to be cpu 1because otherwi
     // Create a task for reading the PCA9555 inputs
     xTaskCreatePinnedToCore(
         IOCONTROL::ioPortTask, /* Task function. */
@@ -171,6 +180,22 @@ void IOCONTROL::initPCA9555()
 
 void IOCONTROL::loop()
 {
+}
+
+void IOCONTROL::writeOutputsTask(void *pvParameters)
+{
+    auto *ioControl = (IOCONTROL *)pvParameters;
+    for (;;)
+    {
+        // Write outputs if time is due
+        if (millis() - ioControl->lastOutputsWritten_MS > WRITE_OUPUTS_INTERVAL)
+        {
+            ioControl->writeDataBag(&dataToControl);
+            ioControl->lastOutputsWritten_MS = millis();
+        }
+
+        vTaskDelay(1);
+    }
 }
 
 void IOCONTROL::ioControlTask(void *pvParameters)
@@ -485,11 +510,11 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
     {
         setENA(data->ena);
     }
-    if(data->command.setSpeed1)
+    if (data->command.setSpeed1)
     {
         setSpeed1(data->speed1);
     }
-    if(data->command.setSpeed2)
+    if (data->command.setSpeed2)
     {
         setSpeed2(data->speed2);
     }

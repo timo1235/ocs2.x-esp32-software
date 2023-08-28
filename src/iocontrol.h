@@ -15,6 +15,8 @@
 #define TEMPERATURE_READ_INTERVAL_MS 10000
 #define CLIENT_DATA_UPDATE_INTERVAL_MS 5
 
+#define WRITE_OUPUTS_INTERVAL 20
+
 // DAC channel map
 #define DAC_JOYSTICK_X 3
 #define DAC_JOYSTICK_Y 4
@@ -135,7 +137,6 @@ public:
     void setAllIOsRandom();
 #endif
 
-
     // general
     void writeDataBag(DATA_TO_CONTROL *data);
 
@@ -151,8 +152,10 @@ private:
     // Task handler
     static void ioControlTask(void *pvParameters);
     static void ioPortTask(void *pvParameters);
+    static void writeOutputsTask(void *pvParameters);
     TaskHandle_t ioPortTaskHandle;
     TaskHandle_t ioControlTaskHandle;
+    TaskHandle_t writeOutputsTaskHandle;
 
     // Temp sensors
     int temperatures[5];
@@ -170,4 +173,5 @@ private:
     uint32_t lastI2CCheck = 0;
 
     uint32_t lastClientDataUpdate = 20000;
+    uint32_t lastOutputsWritten_MS = 20000;
 };

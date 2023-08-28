@@ -1,9 +1,5 @@
 #include <includes.h>
 
-// void receiveEvent(int count){
-// Serial.println(count);
-// }
-
 uint8_t newMACAddress[] = CONTROLLER_MAC_ADDRESS;
 
 DATA_TO_CONTROL dataToControl = {
@@ -30,7 +26,77 @@ byte PROTOCOL::clientCount = 0;
 CLIENT_DATA PROTOCOL::clients[5];
 CLIENT_DATA PROTOCOL::currentControls = {0};
 
+CLIENT_DATA PROTOCOL::serialClient;
+
+bool PROTOCOL::serialConnected;
+uint32_t PROTOCOL::lastSerialPackageReceived;
+uint16_t PROTOCOL::serialConnectionTimeout_MS = 1000;
+HardwareSerial SerialPort(2);
+SerialTransfer myTransfer;
+
 void PROTOCOL::setup()
+{
+    PROTOCOL::setupESPNOW();
+    PROTOCOL::setupSerial();
+}
+
+void PROTOCOL::setupSerial()
+{
+    SerialPort.begin(115200, SERIAL_8N1, 16, 17);
+    myTransfer.begin(SerialPort);
+    PROTOCOL::serialClient.isSerialClient = true;
+
+    // Create a task for the protocol
+    xTaskCreatePinnedToCore(
+        PROTOCOL::serialTaskHandler, /* Task function. */
+        "Protocol serial task",      /* name of task. */
+        10000,                       /* Stack size of task */
+        this,                        /* parameter of the task */
+        tskIDLE_PRIORITY,            /* priority of the task */
+        &serialTask,                 /* Task handle to keep track of created task */
+        0);
+}
+
+void PROTOCOL::serialTaskHandler(void *pvParameters)
+{
+    auto *protocol = (PROTOCOL *)pvParameters;
+    for (;;)
+    {
+        int bytesAvailable = myTransfer.available();
+        if (bytesAvailable)
+        {
+            DATA_TO_CONTROL tempDataToControl = {};
+            myTransfer.rxObj(tempDataToControl);
+
+            if (PROTOCOL::serialConnected == false)
+            {
+                PROTOCOL::serialConnected = true;
+                DPRINTLN("Serial: Handwheel connection established. WiFi signals may be ignored, if they try to control the same ouptuts like the serial handwheel. Serial handwheel has priority.");
+            }
+            PROTOCOL::lastSerialPackageReceived = millis();
+            PROTOCOL::updateClientData(&PROTOCOL::serialClient, &tempDataToControl, true);
+            PROTOCOL::setDataAccordingToCommand(&PROTOCOL::serialClient, &tempDataToControl);
+
+            PROTOCOL::serialConnectionTimeout_MS = dataToControl.command.updateIntervalSerial_MS;
+
+            myTransfer.sendDatum(dataToClient);
+
+            // ioControl.writeDataBag(&dataToControl);
+            ioControl.startBlinkRJ45LED();
+        }
+
+        if (PROTOCOL::isSerialConnected() && millis() - PROTOCOL::lastSerialPackageReceived > PROTOCOL::serialConnectionTimeout_MS * 4)
+        {
+            PROTOCOL::serialConnected = false;
+            DPRINTLN("Serial: Handwheel connection timed out.");
+            PROTOCOL::resetOutputsControlledByClient(&PROTOCOL::serialClient);
+            ioControl.stopBlinkRJ45LED();
+        }
+    }
+    vTaskDelay(1);
+}
+
+void PROTOCOL::setupESPNOW()
 {
     WiFi.enableLongRange(true);
     WiFi.mode(WIFI_STA);
@@ -79,7 +145,7 @@ void PROTOCOL::protocolTaskHandler(void *pvParameters)
                 {
                     continue;
                 }
-                if (millis() - PROTOCOL::clients[i].lastSeen > PROTOCOL::clients[i].updateInterval_MS * 2)
+                if (millis() - PROTOCOL::clients[i].lastSeen > PROTOCOL::clients[i].updateInterval_MS * 4)
                 {
                     DPRINT("WiFi: Peer: ");
                     DPRINT(i);
@@ -95,7 +161,7 @@ void PROTOCOL::protocolTaskHandler(void *pvParameters)
                 }
             }
             // Stop blinking the led if there is no client connected
-            if (!anyClientConnected)
+            if (!anyClientConnected && PROTOCOL::isSerialConnected() == false)
             {
                 ioControl.stopBlinkRJ45LED();
             }
@@ -170,7 +236,6 @@ void PROTOCOL::onDataRecv(const uint8_t *address, const uint8_t *incomingData, i
         }
     }
 
-    ioControl.writeDataBag(&dataToControl);
     ioControl.startBlinkRJ45LED();
     if (dataToControl.command.returnData)
     {
@@ -178,70 +243,75 @@ void PROTOCOL::onDataRecv(const uint8_t *address, const uint8_t *incomingData, i
     }
 }
 
+bool PROTOCOL::isSerialConnected()
+{
+    return PROTOCOL::serialConnected;
+}
+
 // This is where the incoming data is saved to the dataToControl variable
 void PROTOCOL::setDataAccordingToCommand(CLIENT_DATA *client, DATA_TO_CONTROL *incomingDataToControl)
 {
-    if (client->setJoystick)
+    if (client->setJoystick && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setJoystick))
     {
         dataToControl.joystickX = incomingDataToControl->joystickX;
         dataToControl.joystickY = incomingDataToControl->joystickY;
         dataToControl.joystickZ = incomingDataToControl->joystickZ;
     }
-    if (client->setFeedrate)
+    if (client->setFeedrate && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setFeedrate))
     {
         dataToControl.feedrate = incomingDataToControl->feedrate;
     }
-    if (client->setRotationSpeed)
+    if (client->setRotationSpeed && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setRotationSpeed))
     {
         dataToControl.rotationSpeed = incomingDataToControl->rotationSpeed;
     }
-    if (client->setAutosquare)
+    if (client->setAutosquare && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setAutosquare))
     {
         dataToControl.autosquare = incomingDataToControl->autosquare;
     }
-    if (client->setEna)
+    if (client->setEna && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setEna))
     {
         dataToControl.ena = incomingDataToControl->ena;
     }
-    if (client->setAxisSelect)
+    if (client->setAxisSelect && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setAxisSelect))
     {
         dataToControl.selectAxisX = incomingDataToControl->selectAxisX;
         dataToControl.selectAxisY = incomingDataToControl->selectAxisY;
         dataToControl.selectAxisZ = incomingDataToControl->selectAxisZ;
     }
-    if (client->setOk)
+    if (client->setOk && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setOk))
     {
         dataToControl.ok = incomingDataToControl->ok;
     }
-    if (client->setProgrammStart)
+    if (client->setProgrammStart && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setProgrammStart))
     {
         dataToControl.programmStart = incomingDataToControl->programmStart;
     }
-    if (client->setMotorStart)
+    if (client->setMotorStart && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setMotorStart))
     {
         dataToControl.motorStart = incomingDataToControl->motorStart;
     }
-    if (client->setSpeed1)
+    if (client->setSpeed1 && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setSpeed1))
     {
         dataToControl.speed1 = incomingDataToControl->speed1;
     }
-    if (client->setSpeed2)
+    if (client->setSpeed2 && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setSpeed2))
     {
         dataToControl.speed2 = incomingDataToControl->speed2;
     }
-    if (client->setOutput1)
+    if (client->setOutput1 && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setOutput1))
     {
         dataToControl.output1 = incomingDataToControl->output1;
     }
-    if (client->setOutput2)
+    if (client->setOutput2 && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setOutput2))
     {
         dataToControl.output2 = incomingDataToControl->output2;
     }
-    if (client->setOutput3)
+    if (client->setOutput3 && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setOutput3))
     {
         dataToControl.output3 = incomingDataToControl->output3;
     }
-    if (client->setOutput4)
+    if (client->setOutput4 && (client->isSerialClient || !PROTOCOL::isSerialConnected() || !PROTOCOL::serialClient.setOutput4))
     {
         dataToControl.output4 = incomingDataToControl->output4;
     }
@@ -252,8 +322,15 @@ void PROTOCOL::setDataAccordingToCommand(CLIENT_DATA *client, DATA_TO_CONTROL *i
 // This is called when a client timed out. All outputs controlled by the client are reset to default
 void PROTOCOL::resetOutputsControlledByClient(CLIENT_DATA *client)
 {
-    DPRINT("Wifi: Resetting outputs controlled by peer with address: ");
-    DPRINTLN(PROTOCOL::getMacStrFromAddress(client->macAddress));
+    if (client->isSerialClient)
+    {
+        DPRINTLN("Serial: Resetting outputs controlled by serial client.");
+    }
+    else
+    {
+        DPRINT("Wifi: Resetting outputs controlled by peer with address: ");
+        DPRINTLN(PROTOCOL::getMacStrFromAddress(client->macAddress));
+    }
 
     if (client->setEna)
     {
@@ -265,11 +342,11 @@ void PROTOCOL::resetOutputsControlledByClient(CLIENT_DATA *client)
     {
         ioControl.resetJoySticksToDefaults();
     }
-    if (client->setFeedrate)
+    if (client->setFeedrate && RESET_FEEDRATE_AND_ROTATION_SPEED_ON_CONNCTION_LOSS)
     {
         ioControl.setFeedrate(0);
     }
-    if (client->setRotationSpeed)
+    if (client->setRotationSpeed && RESET_FEEDRATE_AND_ROTATION_SPEED_ON_CONNCTION_LOSS)
     {
         ioControl.setRotationSpeed(0);
     }
@@ -549,6 +626,13 @@ bool PROTOCOL::validateClientCommand(CLIENT_DATA *client, DATA_TO_CONTROL *data,
     return true;
 }
 
+/**
+ * This function updates the client data according to the data received from the client
+ * @param client The client to update
+ * @param data The data received from the client
+ * @param isNewClient True if the client is new
+ * @param isSerialClient True if the client is the serial client
+ */
 void PROTOCOL::updateClientData(CLIENT_DATA *client, DATA_TO_CONTROL *data, bool isNewClient)
 {
     client->setJoystick = data->command.setJoystick;
@@ -567,7 +651,10 @@ void PROTOCOL::updateClientData(CLIENT_DATA *client, DATA_TO_CONTROL *data, bool
     client->setOutput2 = data->command.setOutput2;
     client->setOutput3 = data->command.setOutput3;
     client->setOutput4 = data->command.setOutput4;
-    PROTOCOL::validateClientCommand(client, data, isNewClient);
+    if (!client->isSerialClient)
+    {
+        PROTOCOL::validateClientCommand(client, data, isNewClient);
+    }
 }
 
 void PROTOCOL::onDataSent(const uint8_t *address, esp_now_send_status_t status)

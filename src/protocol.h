@@ -24,9 +24,10 @@ typedef struct
     unsigned setOutput2 : 1;
     unsigned setOutput3 : 1;
     unsigned setOutput4 : 1;
-    unsigned returnACK : 1;  // Return ACK to client
-    unsigned returnData : 1; // Return mainboard data to client, this can be the temperature, autosquaring state and so son and replaces ACK
-    uint16_t updateInterval_MS; // Interval in ms the client sends data to the mainboard
+    unsigned returnACK : 1;           // Return ACK to client
+    unsigned returnData : 1;          // Return mainboard data to client, this can be the temperature, autosquaring state and so son and replaces ACK
+    uint16_t updateInterval_MS;       // Interval in ms the client sends data to the mainboard
+    uint16_t updateIntervalSerial_MS; // Interval in ms the client sends data to the mainboard
 } DATA_COMMAND;
 
 typedef struct
@@ -56,6 +57,7 @@ typedef struct
     uint8_t macAddress[6];
     unsigned ignored : 1;
     uint16_t updateInterval_MS; // Interval in ms the client sends data to the mainboard
+    bool isSerialClient;
 } CLIENT_DATA;
 
 // This struct represents the typical message, a client sends to the main ESP32
@@ -115,19 +117,24 @@ class PROTOCOL
 {
 public:
     void setup();
+    void setupESPNOW();
+    void setupSerial();
     void loop();
     static char *getMacStrFromAddress(uint8_t *address);
     static uint16_t getIntegerFromAddress(const uint8_t *address);
     static bool lockSending;
+    static bool isSerialConnected();
+
 private:
     static void onDataSent(const uint8_t *address, esp_now_send_status_t status);
     static void onDataRecv(const uint8_t *address, const uint8_t *incomingData, int len);
     static esp_err_t sendMessageToClient(uint8_t *address, DATA_TO_CLIENT *data);
     // Saves that kind of functions are currently send to the esp by external devices
     // For example Handwheel 1 sends joystick data and Handwheel 2 sends feedrate data
-    static CLIENT_DATA currentControls; 
+    static CLIENT_DATA currentControls;
 
     static CLIENT_DATA clients[5];
+    static CLIENT_DATA serialClient;
     static byte clientCount;
     static void updateClientData(CLIENT_DATA *client, DATA_TO_CONTROL *data, bool isNewClient);
     // @return true if everything is ok, false if the client is ignored
@@ -138,11 +145,16 @@ private:
 
     static void protocolTaskHandler(void *pvParameters);
     TaskHandle_t protocolTask;
-    
+    static void serialTaskHandler(void *pvParameters);
+    TaskHandle_t serialTask;
+
+    static bool serialConnected;
+    static uint32_t lastSerialPackageReceived;
+    static uint16_t serialConnectionTimeout_MS;
+
     static void dumpDataToControl();
     // static esp_now_peer_info_t peerInfo;
     static bool addPeerIfNotExists(uint8_t *address);
 
     uint32_t lastTimeoutCheck = 5000;
-    
 };
