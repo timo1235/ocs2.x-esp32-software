@@ -134,7 +134,6 @@ public:
     void dacSetAllChannel(int value);
     void setFeedrate(int value);
     void setRotationSpeed(int value);
-    void setAllIOsRandom();
 #endif
 
     // general

@@ -473,6 +473,12 @@ void IOCONTROL::setRotationSpeed(int value)
 
 void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
 {
+    // Stop if the io is not initialized - mostly means, the mainboard has no power or is not connected
+    if (!this->IOInitialized)
+    {
+        return;
+    }
+
 #if ESP_HANDWHEEL == true
     if (data->command.setJoystick)
     {
@@ -536,18 +542,6 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
         setOut4(data->output4);
     }
 }
-#if ESP_HANDWHEEL == true
-void IOCONTROL::setAllIOsRandom()
-{
-    setAuswahlX(random(0, 1));
-    setAuswahlY(random(0, 1));
-    setAuswahlZ(random(0, 1));
-
-    setOK(random(0, 1));
-    setMotorStart(random(0, 1));
-    setProgrammStart(random(0, 1));
-}
-#endif // ESP_HANDWHEEL == true
 
 /**
  * @param number Number of the input. Possible values are 1-10.
