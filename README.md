@@ -39,6 +39,7 @@ Take a look at the `src/configuration` file for the configuration.
 - added `Serial Transfer` library
 - added code for serial communication with the ESP32 panel
 - added new configuration `RESET_FEEDRATE_AND_ROTATION_SPEED_ON_CONNCTION_LOSS` to control the communication loss reset behavior
+  - changed default behaviour of sketch to not reset feedrate and rotation speed on connection loss (this can have a negative effect on the machine if the connection is lost for a short time and a job is running)
 
 ## 1.0.0
 

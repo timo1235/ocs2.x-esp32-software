@@ -50,7 +50,7 @@
 // This sets the feedrate and rotation speed output to zero if the connection to the WiFi or Serial
 // client is lost. Has no effect when ESP_HANDWHEEL is set to false.
 // Default: true
-#define RESET_FEEDRATE_AND_ROTATION_SPEED_ON_CONNCTION_LOSS true
+#define RESET_FEEDRATE_AND_ROTATION_SPEED_ON_CONNCTION_LOSS false
 
 //===========================================================================
 // *************************   Autosquare    ********************************
@@ -72,7 +72,7 @@
 
 //--- Axis configuration for autosquare ---
 //-- Axis 1 --
-#define AXIS1_ACTIVE true
+#define AXIS1_ACTIVE false
 #if AXIS1_ACTIVE
 #define AXIS1_MOTOR1 AXIS::x                           // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS1_MOTOR1_ENDSTOP_INPUT 1                   // Can be a number between 1 and 10 for input 1-10
@@ -88,7 +88,7 @@
 #define AXIS1_REVERSE_MOTOR_DIRECTION false            // Lets the motors rotate counter clockwise
 #endif
 //-- Axis 2 --
-#define AXIS2_ACTIVE true
+#define AXIS2_ACTIVE false
 #if AXIS2_ACTIVE
 #define AXIS2_MOTOR1 AXIS::y                           // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS2_MOTOR1_ENDSTOP_INPUT 3                   // Can be a number between 1 and 10 for input 1-10
@@ -104,7 +104,7 @@
 #define AXIS2_REVERSE_MOTOR_DIRECTION false            // Lets the motors rotate counter clockwise
 #endif
 //-- Axis 3 --
-#define AXIS3_ACTIVE true
+#define AXIS3_ACTIVE false
 #if AXIS3_ACTIVE
 #define AXIS3_MOTOR1 AXIS::z                           // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS3_MOTOR1_ENDSTOP_INPUT 5                   // Can be a number between 1 and 10 for input 1-10
