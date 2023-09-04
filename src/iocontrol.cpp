@@ -16,9 +16,19 @@ void IOCONTROL::setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
+#if OCS2_VERSION >= 9
+    pinMode(CONTROLLER_DIR_BUFFER_ENABLE_PIN, OUTPUT);
+    digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, LOW);
+#endif
+#if OCS2_VERSION >= 10
+    pinMode(ESP32_DAC_ENABLE_PIN, OUTPUT);
+    digitalWrite(ESP32_DAC_ENABLE_PIN, LOW);
+#endif
+
     this->checkPCA9555();
 
 #if ESP_HANDWHEEL == true
+    this->enableDACOutputs();
     // DAC
     dac.begin(BU2506_LD_PIN);
     dac.resetOutputs();
@@ -660,6 +670,31 @@ void IOCONTROL::updateClientData()
     dataToClient.autosquareRunning = stepperControl.autosquareRunning;
     dataToClient.alarmState = this->getAlarmAll();
     dataToClient.spindelState = this->getSpindelOnOff();
+}
+
+void IOCONTROL::enableControllerDirBuffer()
+{
+#if OCS2_VERSION >= 9
+    digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, LOW);
+#endif
+}
+void IOCONTROL::disableControllerDirBuffer()
+{
+#if OCS2_VERSION >= 9
+    digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, HIGH);
+#endif
+}
+void IOCONTROL::enableDACOutputs()
+{
+#if OCS2_VERSION >= 10
+    digitalWrite(ESP32_DAC_ENABLE_PIN, HIGH);
+#endif
+}
+void IOCONTROL::disableDACOutputs()
+{
+#if OCS2_VERSION >= 10
+    digitalWrite(ESP32_DAC_ENABLE_PIN, LOW);
+#endif
 }
 
 IOCONTROL ioControl;

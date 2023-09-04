@@ -4,7 +4,7 @@
 
 // The version of the open cnc shield 2 mainboard. This is used to configure the pinmap
 // Can be 4 or newer - for example if your shield has version 2.04 use 4 as value, if the shield has 2.12 use 12 as value
-#define OCS2_VERSION 8
+#define OCS2_VERSION 11
 
 // Use this ESP32 for controlling the handwheel inputs like Joystick, Programm Start, Motor start, etc.
 // True = ESP32 is used for handwheel inputs
@@ -76,11 +76,11 @@
 #if AXIS1_ACTIVE
 #define AXIS1_MOTOR1 AXIS::x                           // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS1_MOTOR1_ENDSTOP_INPUT 1                   // Can be a number between 1 and 10 for input 1-10
-#define AXIS1_MOTOR1_ENDSTOP_INVERTED false            // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS1_MOTOR1_ENDSTOP_INVERTED true             // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
 #define AXIS1_MOTOR1_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS1_MOTOR2 AXIS::a                           // Can be AXIS::x, AXIS::y, AXIS::z, AXIS::a, AXIS::b, AXIS::c
 #define AXIS1_MOTOR2_ENDSTOP_INPUT 2                   // Can be a number between 1 and 10 for input 1-10
-#define AXIS1_MOTOR2_ENDSTOP_INVERTED false            // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
+#define AXIS1_MOTOR2_ENDSTOP_INVERTED true             // Can be true or false. If false the endstop is NO(normally open), if true the endstop is NC(normally closed)
 #define AXIS1_MOTOR2_DRIVE_FROM_ENDSTOP_DISTANCE_MM 10 // How far should the motor drive from the endstop after autosquaring in mm - float values can be used, e.g. 10.5
 #define AXIS1_STEPS_PER_REVOLUTION 1600                // How many steps are needed for a complete turn. Normal steppers need 200 steps. Now multiply the microstepp config. E.g. 200*8=1600
 #define AXIS1_MM_PER_REVOLUTION 32                     // How many mm has the machine moved after one turn.

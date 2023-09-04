@@ -143,6 +143,15 @@ public:
     void startBlinkRJ45LED();
     void stopBlinkRJ45LED();
 
+    // This lets the ControllerModule control the direction of the motors
+    void enableControllerDirBuffer();
+    // This stops the ControllerModule from controlling the direction of the motors - Used for Autosquaring
+    void disableControllerDirBuffer();
+
+    // Enable / disable the onboard DAC for the analog outputs from esp32 to the controller(when usign the ESP32 Handwheel)
+    void enableDACOutputs();
+    void disableDACOutputs();
+
     int getTemperature(byte number); // Number can be 0-4. 0 is the onboard sensor
 
     bool IOInitialized = false;

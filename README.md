@@ -1,6 +1,6 @@
 # OPEN-CNC-Shield 2.x ESP32 Software
 
-This project contains the software for the ESP32 on the OPEN-CNC-Shield 2.x and is still under development.
+This project contains the software for the ESP32 on the OPEN-CNC-Shield 2.
 
 ## Howto install
 
@@ -31,6 +31,16 @@ Take a look at the `src/configuration` file for the configuration.
 # Changelog
 
 ## latest changes - not released
+
+## 1.0.2
+
+- Used esp32 pin d27 for the dir buffer of the controller module
+  - When autosquaring is active, the dir buffer is disabled, so the controller module cant set the direction of the motors
+  - When autosquaring is finished, the dir buffer is enabled again
+- Added package.json
+- Used esp32 pin d32 for the dac multiplexer enable pin
+  - When `ESP_HANDWHEEL` is on, the dac multiplexer is enabled, so the esp32 handwheel can control the analog outputs
+  - When `ESP_HANDWHEEL` is off, the dac multiplexer is disabled, a wired handwheel can then control the analog outputs like joystick etc. For example with the PanelModule Breakout
 
 ## 1.0.1
 

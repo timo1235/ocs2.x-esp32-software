@@ -6,6 +6,9 @@
 
 #define TEMPERATURE_SENSOR_PIN 25 // DS18B20 Sensor
 
+#define CONTROLLER_DIR_BUFFER_ENABLE_PIN 27
+#define ESP32_DAC_ENABLE_PIN 32
+
 // Motor Step pins
 #define STEP_X_PIN 12
 #define STEP_Y_PIN 14
@@ -21,7 +24,7 @@
 #if OCS2_VERSION == 4 || OCS2_VERSION == 5
 #define I2C_BUS_SDA 17
 #define I2C_BUS_SCL 16
-#else 
+#else
 #define I2C_BUS_SDA 21
 #define I2C_BUS_SCL 22
 #endif

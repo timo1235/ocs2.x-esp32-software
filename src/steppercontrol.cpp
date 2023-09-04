@@ -113,8 +113,8 @@ void STEPPERCONTROL::initializeStepper(byte configIndex)
     int stepsPerMM = autosquareConfigs[configIndex].stepsPerRevolution / autosquareConfigs[configIndex].mmPerRevolution;
     int stepsPerSecond = autosquareConfigs[configIndex].asSpeed_mm_s * stepsPerMM;
 
-    steppers[autosquareConfigs[configIndex].motor1]->setSpeedInHz(stepsPerSecond); 
-    steppers[autosquareConfigs[configIndex].motor2]->setSpeedInHz(stepsPerSecond); 
+    steppers[autosquareConfigs[configIndex].motor1]->setSpeedInHz(stepsPerSecond);
+    steppers[autosquareConfigs[configIndex].motor2]->setSpeedInHz(stepsPerSecond);
     steppers[autosquareConfigs[configIndex].motor1]->setAcceleration(STEPPER_ACCELERATION);
     steppers[autosquareConfigs[configIndex].motor2]->setAcceleration(STEPPER_ACCELERATION);
 }
@@ -225,8 +225,8 @@ void STEPPERCONTROL::autosquareProcess()
 
         DPRINT("Autosquare: Config: ");
         DPRINTLN(i);
-        DPRINTLN("Autosquare: Motor1 start drive from endstop - axis: " +  String(autosquareConfigs[i].motor1) + " - distance: " +  String(autosquareConfigs[i].motor1DriveBackDistance_mm));
-        DPRINTLN("Autosquare: Motor2 start drive from endstop - axis: " +  String(autosquareConfigs[i].motor2) + " - distance: " +  String(autosquareConfigs[i].motor2DriveBackDistance_mm));
+        DPRINTLN("Autosquare: Motor1 start drive from endstop - axis: " + String(autosquareConfigs[i].motor1) + " - distance: " + String(autosquareConfigs[i].motor1DriveBackDistance_mm));
+        DPRINTLN("Autosquare: Motor2 start drive from endstop - axis: " + String(autosquareConfigs[i].motor2) + " - distance: " + String(autosquareConfigs[i].motor2DriveBackDistance_mm));
     }
 
     allFinished = false;
@@ -303,6 +303,8 @@ void STEPPERCONTROL::initializeAutosquare()
         setDirectionByAxisLabel(autosquareConfigs[i].motor1, autosquareConfigs[i].reverseMotorDirection ? LOW : HIGH);
         setDirectionByAxisLabel(autosquareConfigs[i].motor2, autosquareConfigs[i].reverseMotorDirection ? LOW : HIGH);
     }
+    // Prevent the ControllerModule from using the DIR pins of the motors
+    ioControl.disableControllerDirBuffer();
 };
 
 void STEPPERCONTROL::terminateAutosquare()
@@ -327,9 +329,13 @@ void STEPPERCONTROL::terminateAutosquare()
         setDirectionByAxisLabel(autosquareConfigs[i].motor1, LOW);
         setDirectionByAxisLabel(autosquareConfigs[i].motor2, LOW);
     }
+
+    // Enable the ControllerModule to use the DIR pins of the motors again
+    ioControl.enableControllerDirBuffer();
+
     // Force wait until autosquare button is released
     while (this->getAutosquareButtonState())
-    {   
+    {
         DPRINTLN("Autosquare: Waiting for button release");
         delay(100);
     }
@@ -371,7 +377,8 @@ void STEPPERCONTROL::printAutosquareConfig()
     DPRINTLN("Autosquare: Printing configuration for active autosquare axis");
     for (byte i = 0; i < sizeof(autosquareConfigs) / sizeof(AUTOSQUARE_CONFIG); i++)
     {
-        if(!autosquareConfigs[i].active) {
+        if (!autosquareConfigs[i].active)
+        {
             continue;
         }
         DPRINT("Motor1: ");

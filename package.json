@@ -1,0 +1,19 @@
+{
+  "name": "ocs2.x-esp32-software",
+  "description": "This project contains the software for the ESP32 on the OPEN-CNC-Shield 2",
+  "authors": [
+    {
+      "name": "Timo Altholtmann",
+      "email": "blog@altholtmann.com",
+      "maintainer": true
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timo1235/ocs2.x-esp32-software"
+  },
+  "version": "1.0.2",
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "*"
+}
