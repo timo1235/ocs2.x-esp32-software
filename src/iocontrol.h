@@ -148,7 +148,8 @@ public:
     // This stops the ControllerModule from controlling the direction of the motors - Used for Autosquaring
     void disableControllerDirBuffer();
 
-    // Enable / disable the onboard DAC for the analog outputs from esp32 to the controller(when usign the ESP32 Handwheel)
+    // Enable / disable the onboard DAC for the analog outputs from esp32 to the controller(when using the ESP32 Handwheel)
+    // Disable means, the ESP32 has no control over the analog outputs
     void enableDACOutputs();
     void disableDACOutputs();
 

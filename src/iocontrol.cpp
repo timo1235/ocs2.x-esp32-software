@@ -18,11 +18,11 @@ void IOCONTROL::setup()
 
 #if OCS2_VERSION >= 9
     pinMode(CONTROLLER_DIR_BUFFER_ENABLE_PIN, OUTPUT);
-    digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, LOW);
+    this->enableControllerDirBuffer();
 #endif
 #if OCS2_VERSION >= 10
     pinMode(ESP32_DAC_ENABLE_PIN, OUTPUT);
-    digitalWrite(ESP32_DAC_ENABLE_PIN, LOW);
+    this->disableDACOutputs();
 #endif
 
     this->checkPCA9555();

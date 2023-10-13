@@ -32,6 +32,10 @@ Take a look at the `src/configuration` file for the configuration.
 
 ## latest changes - not released
 
+## 1.0.3
+
+- Added support for the OPEN-CNC-Shield v2.13
+
 ## 1.0.2
 
 - Used esp32 pin d27 for the dir buffer of the controller module
