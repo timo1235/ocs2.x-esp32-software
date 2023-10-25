@@ -631,7 +631,6 @@ bool PROTOCOL::validateClientCommand(CLIENT_DATA *client, DATA_TO_CONTROL *data,
  * @param client The client to update
  * @param data The data received from the client
  * @param isNewClient True if the client is new
- * @param isSerialClient True if the client is the serial client
  */
 void PROTOCOL::updateClientData(CLIENT_DATA *client, DATA_TO_CONTROL *data, bool isNewClient)
 {

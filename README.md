@@ -32,6 +32,10 @@ Take a look at the `src/configuration` file for the configuration.
 
 ## latest changes - not released
 
+## 1.0.4
+
+- Small fix for the control of the DIR pins
+
 ## 1.0.3
 
 - Added support for the OPEN-CNC-Shield v2.13

@@ -284,6 +284,8 @@ void STEPPERCONTROL::autosquareProcess()
 void STEPPERCONTROL::initializeAutosquare()
 {
     DPRINTLN("Autosquare: initialize");
+    // Prevent the ControllerModule from using the DIR pins of the motors
+    ioControl.disableControllerDirBuffer();
 
     for (byte i = 0; i < sizeof(autosquareConfigs) / sizeof(AUTOSQUARE_CONFIG); i++)
     {
@@ -303,8 +305,6 @@ void STEPPERCONTROL::initializeAutosquare()
         setDirectionByAxisLabel(autosquareConfigs[i].motor1, autosquareConfigs[i].reverseMotorDirection ? LOW : HIGH);
         setDirectionByAxisLabel(autosquareConfigs[i].motor2, autosquareConfigs[i].reverseMotorDirection ? LOW : HIGH);
     }
-    // Prevent the ControllerModule from using the DIR pins of the motors
-    ioControl.disableControllerDirBuffer();
 };
 
 void STEPPERCONTROL::terminateAutosquare()
