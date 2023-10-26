@@ -32,6 +32,10 @@ Take a look at the `src/configuration` file for the configuration.
 
 ## latest changes - not released
 
+## 1.0.5
+
+- Fix timeouts because of wrong delay in wifi tasks, this should fix behavior when autosquaring is started via the pinout instead of an wifi panel
+
 ## 1.0.4
 
 - Small fix for the control of the DIR pins

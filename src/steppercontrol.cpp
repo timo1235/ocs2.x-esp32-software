@@ -162,7 +162,8 @@ void STEPPERCONTROL::autosquareProcess()
         // Abort if the button is no longer pressed
         if (!this->getAutosquareButtonState())
         {
-            break;
+            terminateAutosquare();
+            return;
         }
         for (byte i = 0; i < sizeof(autosquareConfigs) / sizeof(AUTOSQUARE_CONFIG); i++)
         {
@@ -236,7 +237,8 @@ void STEPPERCONTROL::autosquareProcess()
         // Abort if the button is no longer pressed
         if (!this->getAutosquareButtonState())
         {
-            break;
+            terminateAutosquare();
+            return;
         }
         for (byte i = 0; i < sizeof(autosquareConfigs) / sizeof(AUTOSQUARE_CONFIG); i++)
         {

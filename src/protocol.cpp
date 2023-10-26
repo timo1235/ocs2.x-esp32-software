@@ -92,8 +92,8 @@ void PROTOCOL::serialTaskHandler(void *pvParameters)
             PROTOCOL::resetOutputsControlledByClient(&PROTOCOL::serialClient);
             ioControl.stopBlinkRJ45LED();
         }
+        vTaskDelay(1);
     }
-    vTaskDelay(1);
 }
 
 void PROTOCOL::setupESPNOW()
@@ -166,8 +166,8 @@ void PROTOCOL::protocolTaskHandler(void *pvParameters)
                 ioControl.stopBlinkRJ45LED();
             }
         }
+        vTaskDelay(1);
     }
-    vTaskDelay(1);
 }
 
 bool PROTOCOL::addPeerIfNotExists(uint8_t *address)
