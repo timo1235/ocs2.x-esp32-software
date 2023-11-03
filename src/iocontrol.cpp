@@ -103,15 +103,43 @@ void IOCONTROL::checkPCA9555()
     }
 }
 
-void IOCONTROL::initPCA9555()
+void IOCONTROL::initDirPins()
 {
-    // Set output pin modes for IO Expander 1
     ioport1.pinMode(IO1_DIRX, OUTPUT);
     ioport1.pinMode(IO1_DIRY, OUTPUT);
     ioport1.pinMode(IO1_DIRZ, OUTPUT);
     ioport1.pinMode(IO1_DIRA, OUTPUT);
     ioport1.pinMode(IO1_DIRB, OUTPUT);
     ioport1.pinMode(IO1_DIRC, OUTPUT);
+    setDirX(LOW);
+    setDirY(LOW);
+    setDirZ(LOW);
+    setDirA(LOW);
+    setDirB(LOW);
+    setDirC(LOW);
+}
+
+void IOCONTROL::freeDirPins()
+{
+    ioport1.pinMode(IO1_DIRX, INPUT);
+    ioport1.pinMode(IO1_DIRY, INPUT);
+    ioport1.pinMode(IO1_DIRZ, INPUT);
+    ioport1.pinMode(IO1_DIRA, INPUT);
+    ioport1.pinMode(IO1_DIRB, INPUT);
+    ioport1.pinMode(IO1_DIRC, INPUT);
+}
+
+void IOCONTROL::initPCA9555()
+{
+// Set output pin modes for IO Expander 1
+#if OCS2_VERSION == 12
+    // OCS2 Version 12 have DIR pins directly connected to the controller DIR pins
+    // Therefore we only use the pins as output, when the controller DIR is not connected
+    // That is the case during autosquaring
+    this->freeDirPins();
+#else
+    this->initDirPins();
+#endif
 #if ESP_HANDWHEEL == true
     ioport1.pinMode(IO1_SPEED1, OUTPUT);
     ioport1.pinMode(IO1_SPEED2, OUTPUT);
@@ -163,12 +191,6 @@ void IOCONTROL::initPCA9555()
     setOut4(LOW);
 
     // Set default states
-    setDirX(LOW);
-    setDirY(LOW);
-    setDirZ(LOW);
-    setDirA(LOW);
-    setDirB(LOW);
-    setDirC(LOW);
 #if ESP_HANDWHEEL == true
     setSpeed1(LOW);
     setSpeed2(LOW);
@@ -675,12 +697,14 @@ void IOCONTROL::updateClientData()
 void IOCONTROL::enableControllerDirBuffer()
 {
 #if OCS2_VERSION >= 9
+    DPRINTLN("Enable Controller dir buffer");
     digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, LOW);
 #endif
 }
 void IOCONTROL::disableControllerDirBuffer()
 {
 #if OCS2_VERSION >= 9
+    DPRINTLN("Disable Controller dir buffer");
     digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, HIGH);
 #endif
 }

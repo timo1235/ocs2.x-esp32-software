@@ -288,6 +288,10 @@ void STEPPERCONTROL::initializeAutosquare()
     DPRINTLN("Autosquare: initialize");
     // Prevent the ControllerModule from using the DIR pins of the motors
     ioControl.disableControllerDirBuffer();
+#if OCS2_VERSION == 12
+    // Init direction pins as outputs
+    ioControl.initDirPins();
+#endif
 
     for (byte i = 0; i < sizeof(autosquareConfigs) / sizeof(AUTOSQUARE_CONFIG); i++)
     {
@@ -332,6 +336,10 @@ void STEPPERCONTROL::terminateAutosquare()
         setDirectionByAxisLabel(autosquareConfigs[i].motor2, LOW);
     }
 
+#if OCS2_VERSION == 12
+    // Set direction pins to input to prevent interference with the controller module
+    ioControl.freeDirPins();
+#endif
     // Enable the ControllerModule to use the DIR pins of the motors again
     ioControl.enableControllerDirBuffer();
 

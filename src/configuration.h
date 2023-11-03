@@ -4,7 +4,7 @@
 
 // The version of the open cnc shield 2 mainboard. This is used to configure the pinmap
 // Can be 4 or newer - for example if your shield has version 2.04 use 4 as value, if the shield has 2.12 use 12 as value
-#define OCS2_VERSION 13
+#define OCS2_VERSION 12
 
 // Use this ESP32 for controlling the handwheel inputs like Joystick, Programm Start, Motor start, etc.
 // True = ESP32 is used for handwheel inputs

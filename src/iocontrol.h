@@ -86,6 +86,8 @@ public:
     IOCONTROL();
     void setup();
     void initPCA9555();
+    void initDirPins();
+    void freeDirPins();
     void loop();
     // getters / inputs
     bool getAlarmAll(bool forceDirectRead = false);
@@ -139,7 +141,6 @@ public:
     // general
     void writeDataBag(DATA_TO_CONTROL *data);
 
-    void resetInterrupts();
     void startBlinkRJ45LED();
     void stopBlinkRJ45LED();
 

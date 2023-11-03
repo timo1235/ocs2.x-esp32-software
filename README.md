@@ -30,7 +30,12 @@ Take a look at the `src/configuration` file for the configuration.
 
 # Changelog
 
-## latest changes - not released
+## latest
+
+## 1.0.6
+
+- Fixed a bug with the motor direction when the ESP32 is plugged in to the OCS2
+  - changing the direction was not possible while the esp32 was plugged in
 
 ## 1.0.5
 
