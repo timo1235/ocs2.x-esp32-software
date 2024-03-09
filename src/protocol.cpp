@@ -37,7 +37,10 @@ SerialTransfer myTransfer;
 void PROTOCOL::setup()
 {
     PROTOCOL::setupESPNOW();
+    // Serial interface can only be used when FluidNC jogging is not used
+#if !USE_GRBL_JOGGING
     PROTOCOL::setupSerial();
+#endif
 }
 
 void PROTOCOL::setupSerial()

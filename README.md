@@ -32,6 +32,10 @@ Take a look at the `src/configuration` file for the configuration.
 
 ## latest
 
+## unreleased
+- Added experimental functionality for fluidnc jogging with the wireless handwheel
+
+
 ## 1.0.6
 
 - Fixed a bug with the motor direction when the ESP32 is plugged in to the OCS2

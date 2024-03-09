@@ -8,6 +8,10 @@ void setup()
 
     ioControl.setup();
     protocol.setup();
+
+#if USE_GRBL_JOGGING
+    grblJogging.setup();
+#endif
 #if AXIS1_ACTIVE || AXIS2_ACTIVE || AXIS3_ACTIVE
     stepperControl.setup();
 #endif

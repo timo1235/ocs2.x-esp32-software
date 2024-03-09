@@ -53,6 +53,21 @@
 #define RESET_FEEDRATE_AND_ROTATION_SPEED_ON_CONNCTION_LOSS false
 
 //===========================================================================
+// *************************   FluidNC Jogging - Experimental  **************
+//===========================================================================
+// This is an experimental feature. It is not recommended to use this feature in production.
+// If activated, the serial connection with the handwheel wont work anymore, since the 
+// serial connection is used for the jogging commands to FluidNC.
+
+// Use the serial interface for sending jogging command to FluidNC
+// Default: false
+#define USE_GRBL_JOGGING flase
+// min speed for jogging in mm/min - max speed is read from the FluidNC settings via
+// the serial interface. This means max speed will be the value from your FluidNC config.yaml
+// Default: 100
+#define MIN_JOGGING_SPEED 100
+
+//===========================================================================
 // *************************   Autosquare    ********************************
 //===========================================================================
 // How long needs the autosquare button to be pressed before starting autosquaring

@@ -30,6 +30,7 @@
 #include <pinmap.h>
 #include <iocontrol.h>
 #include <steppercontrol.h>
+#include <grbl_jogging.h>
 
 // This makes it usable in all files
 extern IOCONTROL ioControl;
@@ -37,6 +38,7 @@ extern STEPPERCONTROL stepperControl;
 extern DATA_TO_CONTROL dataToControl;
 extern DATA_TO_CLIENT dataToClient;
 extern PROTOCOL protocol;
+extern GRBL_JOGGING grblJogging;
 
 // DEBUG MACRO
 #if OCS_DEBUG == true                             // Macros are usually in all capital letters.
