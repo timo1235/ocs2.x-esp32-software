@@ -20,7 +20,7 @@
 // True = ESP32 is used for stepper driver enable/disable - ENA
 // False = ESP32 is not used for stepper driver enable/disable - ENA
 // Default: true
-#define ESP_SET_ENA true
+#define ESP_SET_ENA false
 
 // Resverse the ENA state for the stepper drivers
 // This is needed for some stepper drivers.
@@ -56,12 +56,12 @@
 // *************************   FluidNC Jogging - Experimental  **************
 //===========================================================================
 // This is an experimental feature. It is not recommended to use this feature in production.
-// If activated, the serial connection with the handwheel wont work anymore, since the 
+// If activated, the serial connection with the handwheel wont work anymore, since the
 // serial connection is used for the jogging commands to FluidNC.
 
 // Use the serial interface for sending jogging command to FluidNC
 // Default: false
-#define USE_GRBL_JOGGING flase
+#define USE_GRBL_JOGGING true
 // min speed for jogging in mm/min - max speed is read from the FluidNC settings via
 // the serial interface. This means max speed will be the value from your FluidNC config.yaml
 // Default: 100

@@ -37,15 +37,12 @@ SerialTransfer myTransfer;
 void PROTOCOL::setup()
 {
     PROTOCOL::setupESPNOW();
-    // Serial interface can only be used when FluidNC jogging is not used
-#if !USE_GRBL_JOGGING
     PROTOCOL::setupSerial();
-#endif
 }
 
 void PROTOCOL::setupSerial()
 {
-    SerialPort.begin(115200, SERIAL_8N1, 16, 17);
+    SerialPort.begin(115200, SERIAL_8N1, ESP32_PANEL_RX_PIN, ESP32_PANEL_TX_PIN);
     myTransfer.begin(SerialPort);
     PROTOCOL::serialClient.isSerialClient = true;
 

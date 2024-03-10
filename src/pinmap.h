@@ -28,3 +28,15 @@
 #define I2C_BUS_SDA 21
 #define I2C_BUS_SCL 22
 #endif
+
+// ESP32 Panel UART Pins
+#define ESP32_PANEL_RX_PIN 16
+#define ESP32_PANEL_TX_PIN 17
+
+// FluidNC UART Pins
+#define FLUIDNC_RX_PIN 35
+#define FLUIDNC_TX_PIN 19
+
+// Default USB UART Pins
+// #define USB_RX_PIN 3
+// #define USB_TX_PIN 1

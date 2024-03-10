@@ -32,9 +32,11 @@ Take a look at the `src/configuration` file for the configuration.
 
 ## latest
 
-## unreleased
+## 1.0.7
 - Added experimental functionality for fluidnc jogging with the wireless handwheel
-
+  - Needs to be activated in the `configuration.h`
+  - Also jumper wires are needed to be able to establish a UART connection to FluidNC
+  - See [Blog](https://blog.altholtmann.com/fluidnc-jogging-mit-wireless-handrad/) for more information
 
 ## 1.0.6
 

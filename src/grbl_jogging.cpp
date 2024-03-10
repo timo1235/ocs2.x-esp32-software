@@ -1,9 +1,10 @@
 #include <includes.h>
 
-HardwareSerial SerialGRBL(2);
+HardwareSerial SerialGRBL(1);
 
 int nextIntervalWaitTime = 10;
 unsigned long lastCommandTime = 0;
+unsigned long lastSettingsCheckTimeMS = 0;
 
 GRBL_JOGGING::GRBL_JOGGING()
 {
@@ -15,7 +16,7 @@ void GRBL_JOGGING::setup()
     ySettings = {0, 0, 0};
     zSettings = {0, 0, 0};
 
-    SerialGRBL.begin(115200, SERIAL_8N1, 16, 17);
+    SerialGRBL.begin(115200, SERIAL_8N1, FLUIDNC_RX_PIN, FLUIDNC_TX_PIN);
 
 #ifdef USE_GRBL_JOGGING
     xTaskCreatePinnedToCore(
@@ -34,12 +35,24 @@ void GRBL_JOGGING::loopTask(void *pvParameters)
     auto *grblJogging = (GRBL_JOGGING *)pvParameters;
     for (;;)
     {
-        grblJogging->checkAndSendJoggingCommands();
-
-        if (SerialGRBL.available() > 0)
+        // Do not send jogging commands if axis settings are not read
+        if (grblJogging->axisSettingsRead)
         {
-            // String line = SerialGRBL.readStringUntil('\n');
-            // Serial.println(line);
+            grblJogging->checkAndSendJoggingCommands();
+        }
+
+        // Debugging - print out all messages from GRBL
+        // if (SerialGRBL.available() > 0)
+        // {
+        //     String line = SerialGRBL.readStringUntil('\n');
+        //     Serial.println(line);
+        // }
+
+        // Try to read axis settings every 2 seconds
+        if (!grblJogging->axisSettingsRead && millis() - lastSettingsCheckTimeMS > 2000)
+        {
+            grblJogging->checkAndReadAxisSettings();
+            lastSettingsCheckTimeMS = millis();
         }
 
         vTaskDelay(1 / portTICK_PERIOD_MS);
@@ -126,14 +139,6 @@ int GRBL_JOGGING::calculateSpeed(int axis, int joystickPosition)
 
 void GRBL_JOGGING::sendJoggingCommand(AxisCommand commands[3])
 {
-    checkAndReadAxisSettings();
-
-    // Stop if the axis settings have not been read
-    if (!axisSettingsRead)
-    {
-        return;
-    }
-
     String command = "$J=G91 G21";
 
     for (int i = 0; i < 3; i++)
@@ -159,6 +164,11 @@ void GRBL_JOGGING::sendJoggingCommand(AxisCommand commands[3])
     {
         command += "F";
         command += String(maxSpeed);
+    }
+    else
+    {
+        // Without speed, we do not need to send a command
+        return;
     }
 
     isJogging = true;
@@ -193,7 +203,7 @@ void GRBL_JOGGING::waitForAcknowledgment()
         }
         vTaskDelay(5 / portTICK_PERIOD_MS); // Yield to other tasks
     }
-    // Serial.println("Timeout waiting for ok"); // Debugging
+    Serial.println("Timeout waiting for ok"); // Debugging
 }
 
 void GRBL_JOGGING::checkBuffer()
@@ -218,48 +228,57 @@ void GRBL_JOGGING::sendJogCancelCommand()
 
 void GRBL_JOGGING::checkAndReadAxisSettings()
 {
-    if (!axisSettingsRead)
+    getAxisInformationFromFluidNC();
+
+    if (xSettings.maxRate > 0 && ySettings.maxRate > 0 && zSettings.maxRate > 0)
     {
-        getAxisInformationFromFluidNC();
-
-        // Print axis Settings
-        Serial.println("Axis Settings:");
-        Serial.print("X: ");
-        Serial.print(xSettings.maxRate);
-        Serial.print(" ");
-        Serial.print(xSettings.resolution);
-        Serial.print(" ");
-        Serial.println(xSettings.acceleration);
-        Serial.print("Y: ");
-        Serial.print(ySettings.maxRate);
-        Serial.print(" ");
-        Serial.print(ySettings.resolution);
-        Serial.print(" ");
-        Serial.println(ySettings.acceleration);
-        Serial.print("Z: ");
-        Serial.print(zSettings.maxRate);
-        Serial.print(" ");
-        Serial.print(zSettings.resolution);
-        Serial.print(" ");
-        Serial.println(zSettings.acceleration);
-
-        if (xSettings.maxRate > 0 && ySettings.maxRate > 0 && zSettings.maxRate > 0)
-        {
-            axisSettingsRead = true;
-        }
+        axisSettingsRead = true;
     }
+    else
+    {
+        Serial.println("Failed to read axis settings from FluidNC, trying again in some seconds.");
+        return;
+    }
+
+    // Print axis Settings
+    Serial.println("FluidNC Axis Settings:");
+    Serial.print("X: ");
+    Serial.print(xSettings.maxRate);
+    Serial.print(" ");
+    Serial.print(xSettings.resolution);
+    Serial.print(" ");
+    Serial.println(xSettings.acceleration);
+    Serial.print("Y: ");
+    Serial.print(ySettings.maxRate);
+    Serial.print(" ");
+    Serial.print(ySettings.resolution);
+    Serial.print(" ");
+    Serial.println(ySettings.acceleration);
+    Serial.print("Z: ");
+    Serial.print(zSettings.maxRate);
+    Serial.print(" ");
+    Serial.print(zSettings.resolution);
+    Serial.print(" ");
+    Serial.println(zSettings.acceleration);
 }
 
 void GRBL_JOGGING::getAxisInformationFromFluidNC()
 {
+    unsigned long startTime = millis();
+    String line;
+
     // Read all settings
     SerialGRBL.println("$S");
-    delay(50);
-    String line;
-    while (SerialGRBL.available() > 0)
+    SerialGRBL.flush();
+
+    while (millis() - startTime < 500)
     {
-        line = SerialGRBL.readStringUntil('\n');
-        parseFluidNCSettingLine(line);
+        while (SerialGRBL.available() > 0)
+        {
+            line = SerialGRBL.readStringUntil('\n');
+            parseFluidNCSettingLine(line);
+        }
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 
