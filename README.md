@@ -2,7 +2,10 @@
 
 This project contains the software for the ESP32 on the OPEN-CNC-Shield 2.
 
-## Howto install
+## Howto install - Web flasher
+Visit the [Firmware installer page](https://timo1235.github.io/ocs2.x-esp32-software/) and follow the steps. No compiling etc required.
+
+## Howto install - VSCode - old way
 
 Open this project folder in VS Code with PlatformIO IDE and upload it to the ESP32. A good documentation how to get the IDE up and running can be found here:
 [Getting Started with VS Code and PlatformIO IDE](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/).
@@ -10,7 +13,12 @@ The corresponding ESP32 software for the remote control can be found here: [OPEN
 
 ### Configuration
 
-Take a look at the `src/configuration` file for the configuration.
+The device can be configured using the webinterface. See the [Firmware installer page](https://timo1235.github.io/ocs2.x-esp32-software/) for more information.
+
+#### Manually start the configuration webinterface
+- OPEN-CNC-Shield 2: Connect a wire between GND and `ESP32_D34`, see [ESP32 Pinout](https://docs.timos-werkstatt.de/open-cnc-shield-2/mainboard/anschluesse-jumper#esp32-pinout). 
+Then the WiFi hotspot should start and the wire can be disconnected again.
+- OPEN-CNC-Shhield 2 Mini: Use the function button on the board. Then the WiFi hotspot should start.
 
 ## Features implemented
 
