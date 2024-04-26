@@ -7,120 +7,185 @@ PCA9555 ioport2(PCA9555_ADRESS_2);
 OneWire oneWire(TEMPERATURE_SENSOR_PIN);
 DallasTemperature tempSensors(&oneWire);
 
-IOCONTROL::IOCONTROL()
-{
-}
+String IOPort1Mapping[] = {"DIRX",          "DIRY",          "DIRZ",          "DIRA", "DIRB",       "DIRC",          "SPEED1",   "SPEED2",
+                           "SELECT_AXIS_Z", "SELECT_AXIS_Y", "SELECT_AXIS_X", "OK",   "MOTORSTART", "PROGRAMMSTART", "ALARMALL", "AUTOSQUARE"};
+String IOPort2Mapping[] = {"IN1", "IN2", "IN3", "IN4", "IN5", "IN6", "IN7", "IN8", "IN9", "IN10", "ENA", "SPINDEL", "OUT1", "OUT2", "OUT3", "OUT4"};
 
-void IOCONTROL::setup()
-{
+bool ioPort1Flag = false;
+bool ioPort2Flag = false;
+
+bool functionButtonPressedFlag = false;
+
+void IRAM_ATTR readIOPort1() { ioPort1Flag = true; }
+void IRAM_ATTR readIOPort2() { ioPort2Flag = true; }
+
+IOCONTROL::IOCONTROL() {}
+
+void IOCONTROL::setup() {
+    if (versionManager.isBoardType(BOARD_TYPE::undefined)) {
+        DPRINTLN("IOControl: Board type is undefined. Functionalities are disabled.");
+        return;
+    }
+
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-#if OCS2_VERSION >= 9
-    pinMode(CONTROLLER_DIR_BUFFER_ENABLE_PIN, OUTPUT);
-    this->enableControllerDirBuffer();
-#endif
-#if OCS2_VERSION >= 10
-    pinMode(ESP32_DAC_ENABLE_PIN, OUTPUT);
-    this->disableDACOutputs();
-#endif
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isHigherThan(2, 9) || versionManager.isBoardType(BOARD_TYPE::OCS2_Mini)) {
+        pinMode(CONTROLLER_DIR_BUFFER_ENABLE_PIN, OUTPUT);
+        this->enableControllerDirBuffer();
+    }
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isHigherThan(2, 10) || versionManager.isBoardType(BOARD_TYPE::OCS2_Mini)) {
+        pinMode(ESP32_DAC_ENABLE_PIN, OUTPUT);
+        this->disableDACOutputs();
+    }
 
     this->checkPCA9555();
 
-#if ESP_HANDWHEEL == true
-    this->enableDACOutputs();
-    // DAC
-    dac.begin(BU2506_LD_PIN);
-    dac.resetOutputs();
-    resetJoySticksToDefaults();
-#endif
+    if (mainConfig.controlHandWheelFunctions) {
+        this->enableDACOutputs();
+        // DAC
+        dac.begin(BU2506_LD_PIN);
+        dac.resetOutputs();
+        resetJoySticksToDefaults();
+    }
 
     tempSensors.begin();
 
     pinMode(IOInterrupt1Pin, INPUT_PULLUP);
     pinMode(IOInterrupt2Pin, INPUT_PULLUP);
+    pinMode(FUNCTION_BUTTON_PIN, INPUT_PULLUP);
+
+    // Interrupt for function button - starting the wifi webinterface
+    attachInterrupt(
+        FUNCTION_BUTTON_PIN,
+        []() {
+        if (functionButtonPressedFlag == true) {
+            return;
+        }
+        functionButtonPressedFlag = true;
+        xTaskCreate(
+            [](void *parameter) {
+            if (!GLOBAL.configManagerWiFiInitialized) {
+                configManager.startWiFi();
+            }
+            vTaskDelete(NULL);
+        },
+            "IOControl: Function Button", 2048, nullptr, DEFAULT_TASK_PRIORITY, NULL);
+    },
+        FALLING);
 
     // Create a task for the iocontrol
-    xTaskCreatePinnedToCore(
-        IOCONTROL::ioControlTask, /* Task function. */
-        "IO Task",                /* name of task. */
-        10000,                    /* Stack size of task */
-        this,                     /* parameter of the task */
-        1,                        /* priority of the task */
-        &ioControlTaskHandle,     /* Task handle to keep track of created task */
-        1);
+    xTaskCreatePinnedToCore(IOCONTROL::ioControlTask, /* Task function. */
+                            "IO Task",                /* name of task. */
+                            4096,                     /* Stack size of task */
+                            this,                     /* parameter of the task */
+                            DEFAULT_TASK_PRIORITY,    /* priority of the task */
+                            NULL,                     /* Task handle to keep track of created task */
+                            TASK_IOCONTROL_CPU);
     // Create a task for writing all outputs
-    xTaskCreatePinnedToCore(
-        IOCONTROL::writeOutputsTask, /* Task function. */
-        "IO Task",                   /* name of task. */
-        10000,                       /* Stack size of task */
-        this,                        /* parameter of the task */
-        1,                           /* priority of the task */
-        &writeOutputsTaskHandle,     /* Task handle to keep track of created task */
-        1);                          // Has to be cpu 1because otherwi
+    xTaskCreatePinnedToCore(IOCONTROL::writeOutputsTask, /* Task function. */
+                            "IO Task",                   /* name of task. */
+                            4096,                        /* Stack size of task */
+                            this,                        /* parameter of the task */
+                            DEFAULT_TASK_PRIORITY,       /* priority of the task */
+                            NULL,                        /* Task handle to keep track of created task */
+                            TASK_IOCONTROL_CPU);
     // Create a task for reading the PCA9555 inputs
+    xTaskCreatePinnedToCore(IOCONTROL::ioPortTask, /* Task function. */
+                            "IO Task",             /* name of task. */
+                            4096,                  /* Stack size of task*/
+                            this,                  /* parameter of the task */
+                            DEFAULT_TASK_PRIORITY, /* priority of the task */
+                            NULL,                  /* Task handle to keep track of created task */
+                            TASK_IOCONTROL_CPU);
+    // Create a task for reading the PCA9555 inputs
+    xTaskCreatePinnedToCore(IOCONTROL::ioPortCheckTask, /* Task function. */
+                            "IO Task",                  /* name of task. */
+                            2048,                       /* Stack size of task*/
+                            this,                       /* parameter of the task */
+                            DEFAULT_TASK_PRIORITY,      /* priority of the task */
+                            NULL,                       /* Task handle to keep track of created task */
+                            TASK_IOCONTROL_CPU);
+}
+
+void IOCONTROL::checkPCA9555() {
     xTaskCreatePinnedToCore(
-        IOCONTROL::ioPortTask, /* Task function. */
-        "IO Task",             /* name of task. */
-        10000,                 /* Stack size of task */
-        this,                  /* parameter of the task */
-        1,                     /* priority of the task */
-        &ioPortTaskHandle,     /* Task handle to keep track of created task */
-        1);                    // Has to be cpu 1because otherwi
+        [](void *parameter) {
+        IOCONTROL *ioControl = static_cast<IOCONTROL *>(parameter);
+        for (;;) {
+            bool io1Success = false;
+            bool io2Success = false;
+            bool io1PreviouslyFailed = false;
+            bool io2PreviouslyFailed = false;
+
+            byte i2c_sda, i2c_scl;
+
+            if (versionManager.isBoardType(BOARD_TYPE::OCS2) && (versionManager.isVersion(2, 4) || versionManager.isVersion(2, 5))) {
+                i2c_sda = I2C_BUS_SDA_OLD;
+                i2c_scl = I2C_BUS_SCL_OLD;
+            } else {
+                i2c_sda = I2C_BUS_SDA;
+                i2c_scl = I2C_BUS_SCL;
+            }
+
+            while (!io1Success || !io2Success) {
+                io1Success = ioport1.begin(i2c_sda, i2c_scl);
+                io2Success = ioport2.begin(i2c_sda, i2c_scl);
+
+                if (!io1Success && !io1PreviouslyFailed) {
+                    DPRINTLN("IOControl: PCA9555_1 not found!!");
+                    ioControl->IOInitialized = false;
+                    io1PreviouslyFailed = true;
+                } else if (io1Success && io1PreviouslyFailed) {
+                    io1PreviouslyFailed = false;
+                }
+
+                if (!io2Success && !io2PreviouslyFailed) {
+                    DPRINTLN("IOControl: PCA9555_2 not found!!");
+                    ioControl->IOInitialized = false;
+                    io2PreviouslyFailed = true;
+                } else if (io2Success && io2PreviouslyFailed) {
+                    io2PreviouslyFailed = false;
+                }
+
+                if (!io1Success || !io2Success) {
+                    digitalWrite(LED_BUILTIN, HIGH);
+                    vTaskDelay(100);
+                    digitalWrite(LED_BUILTIN, LOW);
+                    vTaskDelay(100);
+                }
+            }
+
+            if (!ioControl->IOInitialized) {
+                ioControl->initPCA9555();
+            }
+
+            vTaskDelete(NULL);   // Delete the task after setup
+        }
+    },
+        "Check PCA9555 Chips", 2048, this, DEFAULT_TASK_PRIORITY, NULL, DEFAULT_TASK_CPU);
 }
 
-void IOCONTROL::checkPCA9555()
-{
-    bool io1Success = false;
-    bool io2Success = false;
-    while (!io1Success || !io2Success)
-    {
-        io1Success = ioport1.begin(I2C_BUS_SDA, I2C_BUS_SCL);
-        io2Success = ioport2.begin(I2C_BUS_SDA, I2C_BUS_SCL);
-        if (!io1Success)
-        {
-            DPRINTLN("PCA9555_1 not found!!");
-            this->IOInitialized = false;
-        }
-        if (!io2Success)
-        {
-            DPRINTLN("PCA9555_2 not found!!");
-            this->IOInitialized = false;
-        }
-
-        if (!io1Success || !io2Success)
-        {
-            digitalWrite(LED_BUILTIN, HIGH);
-            delay(100);
-            digitalWrite(LED_BUILTIN, LOW);
-            delay(100);
-        }
-    }
-
-    if (!this->IOInitialized)
-    {
-        this->initPCA9555();
-    }
-}
-
-void IOCONTROL::initDirPins()
-{
+void IOCONTROL::initDirPins() {
     ioport1.pinMode(IO1_DIRX, OUTPUT);
     ioport1.pinMode(IO1_DIRY, OUTPUT);
     ioport1.pinMode(IO1_DIRZ, OUTPUT);
     ioport1.pinMode(IO1_DIRA, OUTPUT);
     ioport1.pinMode(IO1_DIRB, OUTPUT);
-    ioport1.pinMode(IO1_DIRC, OUTPUT);
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2)) {
+        ioport1.pinMode(IO1_DIRC, OUTPUT);
+        setDirC(LOW);
+    } else if (versionManager.isBoardType(BOARD_TYPE::OCS2_Mini)) {
+        ioport1.pinMode(IO1_DIRC, INPUT);
+    }
     setDirX(LOW);
     setDirY(LOW);
     setDirZ(LOW);
     setDirA(LOW);
     setDirB(LOW);
-    setDirC(LOW);
 }
 
-void IOCONTROL::freeDirPins()
-{
+void IOCONTROL::freeDirPins() {
     ioport1.pinMode(IO1_DIRX, INPUT);
     ioport1.pinMode(IO1_DIRY, INPUT);
     ioport1.pinMode(IO1_DIRZ, INPUT);
@@ -129,42 +194,44 @@ void IOCONTROL::freeDirPins()
     ioport1.pinMode(IO1_DIRC, INPUT);
 }
 
-void IOCONTROL::initPCA9555()
-{
-// Set output pin modes for IO Expander 1
-#if OCS2_VERSION == 12
-    // OCS2 Version 12 have DIR pins directly connected to the controller DIR pins
-    // Therefore we only use the pins as output, when the controller DIR is not connected
-    // That is the case during autosquaring
-    this->freeDirPins();
-#else
-    this->initDirPins();
-#endif
-#if ESP_HANDWHEEL == true
-    ioport1.pinMode(IO1_SPEED1, OUTPUT);
-    ioport1.pinMode(IO1_SPEED2, OUTPUT);
-    ioport1.pinMode(IO1_SELECT_AXIS_X, OUTPUT);
-    ioport1.pinMode(IO1_SELECT_AXIS_Y, OUTPUT);
-    ioport1.pinMode(IO1_SELECT_AXIS_Z, OUTPUT);
-    ioport1.pinMode(IO1_OK, OUTPUT);
-    ioport1.pinMode(IO1_MOTORSTART, OUTPUT);
-    ioport1.pinMode(IO1_PROGRAMMSTART, OUTPUT);
-#if ESP_SET_ENA == true
-    ioport2.pinMode(IO2_ENA, OUTPUT);
-#else
-    ioport2.pinMode(IO2_ENA, INPUT);
-#endif // --- end ESP_SET_ENA
-#else
-    ioport1.pinMode(IO1_SPEED1, INPUT);
-    ioport1.pinMode(IO1_SPEED2, INPUT);
-    ioport1.pinMode(IO1_SELECT_AXIS_Z, INPUT);
-    ioport1.pinMode(IO1_SELECT_AXIS_Y, INPUT);
-    ioport1.pinMode(IO1_SELECT_AXIS_X, INPUT);
-    ioport1.pinMode(IO1_OK, INPUT);
-    ioport1.pinMode(IO1_MOTORSTART, INPUT);
-    ioport1.pinMode(IO1_PROGRAMMSTART, INPUT);
-    ioport2.pinMode(IO2_ENA, INPUT);
-#endif // --- end ESP_HANDWHEEL
+void IOCONTROL::initPCA9555() {
+    // Set output pin modes for IO Expander 1
+
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isVersion(2, 12)) {
+        // OCS2 Version 12 have DIR pins directly connected to the controller DIR pins
+        // Therefore we only use the pins as output, when the controller DIR is not connected
+        // That is the case during autosquaring
+        this->freeDirPins();
+    } else {
+        this->initDirPins();
+    }
+
+    if (mainConfig.controlHandWheelFunctions) {
+        ioport1.pinMode(IO1_SPEED1, OUTPUT);
+        ioport1.pinMode(IO1_SPEED2, OUTPUT);
+        ioport1.pinMode(IO1_SELECT_AXIS_X, OUTPUT);
+        ioport1.pinMode(IO1_SELECT_AXIS_Y, OUTPUT);
+        ioport1.pinMode(IO1_SELECT_AXIS_Z, OUTPUT);
+        ioport1.pinMode(IO1_OK, OUTPUT);
+        ioport1.pinMode(IO1_MOTORSTART, OUTPUT);
+        ioport1.pinMode(IO1_PROGRAMMSTART, OUTPUT);
+        if (mainConfig.controlDriverEnable) {
+            ioport2.pinMode(IO2_ENA, OUTPUT);
+        } else {
+            ioport2.pinMode(IO2_ENA, INPUT);
+        }
+    } else {
+        ioport1.pinMode(IO1_SPEED1, INPUT);
+        ioport1.pinMode(IO1_SPEED2, INPUT);
+        ioport1.pinMode(IO1_SELECT_AXIS_Z, INPUT);
+        ioport1.pinMode(IO1_SELECT_AXIS_Y, INPUT);
+        ioport1.pinMode(IO1_SELECT_AXIS_X, INPUT);
+        ioport1.pinMode(IO1_OK, INPUT);
+        ioport1.pinMode(IO1_MOTORSTART, INPUT);
+        ioport1.pinMode(IO1_PROGRAMMSTART, INPUT);
+        ioport2.pinMode(IO2_ENA, INPUT);
+    }
+
     ioport1.pinMode(IO1_ALARMALL, INPUT);
     ioport1.pinMode(IO1_AUTOSQUARE, INPUT);
 
@@ -191,386 +258,288 @@ void IOCONTROL::initPCA9555()
     setOut4(LOW);
 
     // Set default states
-#if ESP_HANDWHEEL == true
-    setSpeed1(LOW);
-    setSpeed2(LOW);
-    setAuswahlX(LOW);
-    setAuswahlY(LOW);
-    setAuswahlZ(LOW);
-    setOK(LOW);
-    setMotorStart(LOW);
-    setProgrammStart(LOW);
-    setENA(LOW);
-#endif
+    if (mainConfig.controlHandWheelFunctions) {
+        setENA(LOW);
+
+        setSpeed1(LOW);
+        setSpeed2(LOW);
+        setAuswahlX(LOW);
+        setAuswahlY(LOW);
+        setAuswahlZ(LOW);
+        setOK(LOW);
+        setMotorStart(LOW);
+        setProgrammStart(LOW);
+        setENA(LOW);
+    }
     ioport1.pinStates();
-    DPRINTLN("Reading Port 1");
     ioport2.pinStates();
-    DPRINTLN("Reading Port 2");
 
+    // Add interrupt for IO Expander 1 & 2
+    attachInterrupt(IOInterrupt1Pin, readIOPort1, FALLING);
+    attachInterrupt(IOInterrupt2Pin, readIOPort2, FALLING);
+
+    DPRINTLN("IOControl: PCA9555 1 & 2 initialized");
     this->IOInitialized = true;
+    GLOBAL.IOControlInitialized = true;
 }
 
-void IOCONTROL::loop()
-{
-}
+void IOCONTROL::loop() {}
 
-void IOCONTROL::writeOutputsTask(void *pvParameters)
-{
-    auto *ioControl = (IOCONTROL *)pvParameters;
-    for (;;)
-    {
-        // Write outputs if time is due
-        if (millis() - ioControl->lastOutputsWritten_MS > WRITE_OUPUTS_INTERVAL)
-        {
-            ioControl->writeDataBag(&dataToControl);
-            ioControl->lastOutputsWritten_MS = millis();
+void IOCONTROL::ioPortCheckTask(void *pvParameters) {
+    auto *ioControl = (IOCONTROL *) pvParameters;
+    for (;;) {
+        if (!ioControl->IOInitialized) {
+            vTaskDelay(1000);
+            continue;
         }
 
-        vTaskDelay(1);
+        ioControl->checkPCA9555();
+
+        vTaskDelay(1000);
     }
 }
 
-void IOCONTROL::ioControlTask(void *pvParameters)
-{
-    auto *ioControl = (IOCONTROL *)pvParameters;
-    for (;;)
-    {
+void IOCONTROL::writeOutputsTask(void *pvParameters) {
+    auto *ioControl = (IOCONTROL *) pvParameters;
+    for (;;) {
+        if (!ioControl->IOInitialized) {
+            vTaskDelay(1000);
+            continue;
+        }
+
+        ioControl->writeDataBag(&dataToControl);
+
+        vTaskDelay(WRITE_OUPUTS_INTERVAL);
+    }
+}
+
+void IOCONTROL::ioControlTask(void *pvParameters) {
+    auto *ioControl = (IOCONTROL *) pvParameters;
+    for (;;) {
+        if (!ioControl->IOInitialized) {
+            vTaskDelay(1000);
+            continue;
+        }
+
         ioControl->panelLED.loop();
 
         // Read temperature if needed
-        if (millis() - ioControl->lastTemperatureRead > TEMPERATURE_READ_INTERVAL_MS)
-        {
+        if (millis() - ioControl->lastTemperatureRead > TEMPERATURE_READ_INTERVAL_MS) {
             ioControl->lastTemperatureRead = millis();
             ioControl->readTemperatures();
         }
 
         // Update client data if needed
-        if (millis() - ioControl->lastClientDataUpdate > CLIENT_DATA_UPDATE_INTERVAL_MS)
-        {
+        if (millis() - ioControl->lastClientDataUpdate > CLIENT_DATA_UPDATE_INTERVAL_MS) {
             ioControl->lastClientDataUpdate = millis();
             ioControl->updateClientData();
         }
 
         ioControl->updateBounceInputs();
-        vTaskDelay(1);
+
+        vTaskDelay(10);
     }
 }
 
-void IOCONTROL::ioPortTask(void *pvParameters)
-{
-    auto *ioControl = (IOCONTROL *)pvParameters;
-    for (;;)
-    {
-        if (ioControl->IOInitialized)
-        {
-            byte interrupt1 = digitalRead(IOInterrupt1Pin);
-            byte interrupt2 = digitalRead(IOInterrupt2Pin);
-            if (interrupt1 == LOW)
-            {
-                ioport1.pinStates();
-                DPRINTLN("Reading Port 1");
-            }
-            if (interrupt2 == LOW)
-            {
-                ioport2.pinStates();
-                DPRINTLN("Reading Port 2");
-            }
+void IOCONTROL::ioPortTask(void *pvParameters) {
+    auto *ioControl = (IOCONTROL *) pvParameters;
+    for (;;) {
+        if (!ioControl->IOInitialized) {
+            vTaskDelay(1000);
+            continue;
+        }
 
-            ioControl->checkPCA9555();
+        if (ioPort1Flag) {
+            ioPort1Flag = false;
+            ioport1.pinStates();
+        }
+        if (ioPort2Flag) {
+            ioPort2Flag = false;
+            ioport2.pinStates();
         }
 
         vTaskDelay(1);
     }
 }
 
-bool IOCONTROL::getAlarmAll(bool forceDirectRead)
-{
-    if (forceDirectRead)
-    {
+bool IOCONTROL::getAlarmAll(bool forceDirectRead) {
+    if (forceDirectRead) {
         return !ioport1.stateOfPin(IO1_ALARMALL);
-    }
-    else
-    {
+    } else {
         return !this->bounceInputs[0].state;
     }
 }
-bool IOCONTROL::getAutosquare(bool forceDirectRead)
-{
-    if (forceDirectRead)
-    {
+bool IOCONTROL::getAutosquare(bool forceDirectRead) {
+    if (forceDirectRead) {
         return !ioport1.stateOfPin(IO1_AUTOSQUARE);
-    }
-    else
-    {
+    } else {
         return !this->bounceInputs[1].state;
     }
 }
 
-bool IOCONTROL::getIn1(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN1) : ioport2.stateOfPin(IO2_IN1);
-}
-bool IOCONTROL::getIn2(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN2) : ioport2.stateOfPin(IO2_IN2);
-}
-bool IOCONTROL::getIn3(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN3) : ioport2.stateOfPin(IO2_IN3);
-}
-bool IOCONTROL::getIn4(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN4) : ioport2.stateOfPin(IO2_IN4);
-}
-bool IOCONTROL::getIn5(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN5) : ioport2.stateOfPin(IO2_IN5);
-}
-bool IOCONTROL::getIn6(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN6) : ioport2.stateOfPin(IO2_IN6);
-}
-bool IOCONTROL::getIn7(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN7) : ioport2.stateOfPin(IO2_IN7);
-}
-bool IOCONTROL::getIn8(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN8) : ioport2.stateOfPin(IO2_IN8);
-}
-bool IOCONTROL::getIn9(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN9) : ioport2.stateOfPin(IO2_IN9);
-}
-bool IOCONTROL::getIn10(bool invert)
-{
-    return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN10) : ioport2.stateOfPin(IO2_IN10);
-}
+bool IOCONTROL::getIn1(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN1) : ioport2.stateOfPin(IO2_IN1); }
+bool IOCONTROL::getIn2(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN2) : ioport2.stateOfPin(IO2_IN2); }
+bool IOCONTROL::getIn3(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN3) : ioport2.stateOfPin(IO2_IN3); }
+bool IOCONTROL::getIn4(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN4) : ioport2.stateOfPin(IO2_IN4); }
+bool IOCONTROL::getIn5(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN5) : ioport2.stateOfPin(IO2_IN5); }
+bool IOCONTROL::getIn6(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN6) : ioport2.stateOfPin(IO2_IN6); }
+bool IOCONTROL::getIn7(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN7) : ioport2.stateOfPin(IO2_IN7); }
+bool IOCONTROL::getIn8(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN8) : ioport2.stateOfPin(IO2_IN8); }
+bool IOCONTROL::getIn9(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN9) : ioport2.stateOfPin(IO2_IN9); }
+bool IOCONTROL::getIn10(bool invert) { return (REVERSE_INPUTS ^ invert) ? !ioport2.stateOfPin(IO2_IN10) : ioport2.stateOfPin(IO2_IN10); }
 
-bool IOCONTROL::getSpindelOnOff(bool forceDirectRead)
-{
-    if (forceDirectRead)
-    {
+bool IOCONTROL::getSpindelOnOff(bool forceDirectRead) {
+    if (forceDirectRead) {
         return ioport2.stateOfPin(IO2_SPINDEL);
-    }
-    else
-    {
+    } else {
         return this->bounceInputs[2].state;
     }
 }
 // setters / outputs
-void IOCONTROL::setDirX(bool value)
-{
-    ioport1.digitalWrite(IO1_DIRX, value);
+void IOCONTROL::setDirX(bool value) { ioport1.digitalWrite(IO1_DIRX, value); }
+void IOCONTROL::setDirY(bool value) { ioport1.digitalWrite(IO1_DIRY, value); }
+void IOCONTROL::setDirZ(bool value) { ioport1.digitalWrite(IO1_DIRZ, value); }
+void IOCONTROL::setDirA(bool value) { ioport1.digitalWrite(IO1_DIRA, value); }
+void IOCONTROL::setDirB(bool value) { ioport1.digitalWrite(IO1_DIRB, value); }
+void IOCONTROL::setDirC(bool value) { ioport1.digitalWrite(IO1_DIRC, value); }
+void IOCONTROL::setSpeed1(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_SPEED1, !value);
+    } else {
+        ioport1.digitalWrite(IO1_SPEED1, value);
+    }
 }
-void IOCONTROL::setDirY(bool value)
-{
-    ioport1.digitalWrite(IO1_DIRY, value);
+void IOCONTROL::setSpeed2(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_SPEED2, !value);
+    } else {
+        ioport1.digitalWrite(IO1_SPEED2, value);
+    }
 }
-void IOCONTROL::setDirZ(bool value)
-{
-    ioport1.digitalWrite(IO1_DIRZ, value);
+void IOCONTROL::setAuswahlX(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_SELECT_AXIS_X, !value);
+    } else {
+        ioport1.digitalWrite(IO1_SELECT_AXIS_X, value);
+    }
 }
-void IOCONTROL::setDirA(bool value)
-{
-    ioport1.digitalWrite(IO1_DIRA, value);
+void IOCONTROL::setAuswahlY(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_SELECT_AXIS_Y, !value);
+    } else {
+        ioport1.digitalWrite(IO1_SELECT_AXIS_Y, value);
+    }
 }
-void IOCONTROL::setDirB(bool value)
-{
-    ioport1.digitalWrite(IO1_DIRB, value);
+void IOCONTROL::setAuswahlZ(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_SELECT_AXIS_Z, !value);
+    } else {
+        ioport1.digitalWrite(IO1_SELECT_AXIS_Z, value);
+    }
 }
-void IOCONTROL::setDirC(bool value)
-{
-    ioport1.digitalWrite(IO1_DIRC, value);
+void IOCONTROL::setOK(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_OK, !value);
+    } else {
+        ioport1.digitalWrite(IO1_OK, value);
+    }
 }
-#if ESP_HANDWHEEL == true
-void IOCONTROL::setSpeed1(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_SPEED1, !value);
-#else
-    ioport1.digitalWrite(IO1_SPEED1, value);
-#endif
+void IOCONTROL::setMotorStart(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_MOTORSTART, !value);
+    } else {
+        ioport1.digitalWrite(IO1_MOTORSTART, value);
+    }
 }
-void IOCONTROL::setSpeed2(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_SPEED2, !value);
-#else
-    ioport1.digitalWrite(IO1_SPEED2, value);
-#endif
+void IOCONTROL::setProgrammStart(bool value) {
+    if (mainConfig.outputsInverted) {
+        ioport1.digitalWrite(IO1_PROGRAMMSTART, !value);
+    } else {
+        ioport1.digitalWrite(IO1_PROGRAMMSTART, value);
+    }
 }
-void IOCONTROL::setAuswahlX(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_SELECT_AXIS_X, !value);
-#else
-    ioport1.digitalWrite(IO1_SELECT_AXIS_X, value);
-#endif
+void IOCONTROL::setENA(bool value) {
+    if (!mainConfig.controlDriverEnable) {
+        return;
+    }
+    if (mainConfig.reverseEnableState) {
+        ioport2.digitalWrite(IO2_ENA, !value);
+    } else {
+        ioport2.digitalWrite(IO2_ENA, value);
+    }
 }
-void IOCONTROL::setAuswahlY(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_SELECT_AXIS_Y, !value);
-#else
-    ioport1.digitalWrite(IO1_SELECT_AXIS_Y, value);
-#endif
-}
-void IOCONTROL::setAuswahlZ(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_SELECT_AXIS_Z, !value);
-#else
-    ioport1.digitalWrite(IO1_SELECT_AXIS_Z, value);
-#endif
-}
-void IOCONTROL::setOK(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_OK, !value);
-#else
-    ioport1.digitalWrite(IO1_OK, value);
-#endif
-}
-void IOCONTROL::setMotorStart(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_MOTORSTART, !value);
-#else
-    ioport1.digitalWrite(IO1_SPEED1, value);
-#endif
-}
-void IOCONTROL::setProgrammStart(bool value)
-{
-#if OUTPUTS_INVERTED == true
-    ioport1.digitalWrite(IO1_PROGRAMMSTART, !value);
-#else
-    ioport1.digitalWrite(IO1_PROGRAMMSTART, value);
-#endif
-}
-#endif // ESP_HANDWHEEL == true
-void IOCONTROL::setENA(bool value)
-{
-#if ESP_SET_ENA == false
-    return;
-#endif // ESP_SET_ENA == false
-#if REVERSE_ENA_STATE == true
-    ioport2.digitalWrite(IO2_ENA, !value);
-#else
-    ioport2.digitalWrite(IO2_ENA, value);
-#endif // --- end REVERSE_ENA_STATE
-}
-void IOCONTROL::setOut1(bool value)
-{
-    ioport2.digitalWrite(IO2_OUT1, value);
-}
-void IOCONTROL::setOut2(bool value)
-{
-    ioport2.digitalWrite(IO2_OUT2, value);
-}
-void IOCONTROL::setOut3(bool value)
-{
-    ioport2.digitalWrite(IO2_OUT3, value);
-}
-void IOCONTROL::setOut4(bool value)
-{
-    ioport2.digitalWrite(IO2_OUT4, value);
-}
+void IOCONTROL::setOut1(bool value) { ioport2.digitalWrite(IO2_OUT1, value); }
+void IOCONTROL::setOut2(bool value) { ioport2.digitalWrite(IO2_OUT2, value); }
+void IOCONTROL::setOut3(bool value) { ioport2.digitalWrite(IO2_OUT3, value); }
+void IOCONTROL::setOut4(bool value) { ioport2.digitalWrite(IO2_OUT4, value); }
 
 // DAC functions
-#if ESP_HANDWHEEL == true
-void IOCONTROL::resetJoySticksToDefaults()
-{
+void IOCONTROL::resetJoySticksToDefaults() {
     dac.analogWrite(DAC_JOYSTICK_RESET_VALUE, DAC_JOYSTICK_X);
     dac.analogWrite(DAC_JOYSTICK_RESET_VALUE, DAC_JOYSTICK_Y);
     dac.analogWrite(DAC_JOYSTICK_RESET_VALUE, DAC_JOYSTICK_Z);
 }
 
-void IOCONTROL::dacSetAllChannel(int value)
-{
-    for (byte i = 1; i < 9; i++)
-    {
+void IOCONTROL::dacSetAllChannel(int value) {
+    for (byte i = 1; i < 9; i++) {
         dac.analogWrite(value, i);
     }
 }
-void IOCONTROL::setFeedrate(int value)
-{
-    dac.analogWrite(value, DAC_FEEDRATE);
-}
-void IOCONTROL::setRotationSpeed(int value)
-{
-    dac.analogWrite(value, DAC_ROTATION_SPEED);
-}
-#endif
+void IOCONTROL::setFeedrate(int value) { dac.analogWrite(value, DAC_FEEDRATE); }
+void IOCONTROL::setRotationSpeed(int value) { dac.analogWrite(value, DAC_ROTATION_SPEED); }
 
-void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
-{
+void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data) {
     // Stop if the io is not initialized - mostly means, the mainboard has no power or is not connected
-    if (!this->IOInitialized)
-    {
+    if (!this->IOInitialized) {
         return;
     }
 
-#if ESP_HANDWHEEL == true
-    if (data->command.setJoystick)
-    {
-        dac.analogWrite(data->joystickX, DAC_JOYSTICK_X);
-        dac.analogWrite(data->joystickY, DAC_JOYSTICK_Y);
-        dac.analogWrite(data->joystickZ, DAC_JOYSTICK_Z);
+    if (mainConfig.controlHandWheelFunctions) {
+        if (data->command.setJoystick) {
+            dac.analogWrite(data->joystickX, DAC_JOYSTICK_X);
+            dac.analogWrite(data->joystickY, DAC_JOYSTICK_Y);
+            dac.analogWrite(data->joystickZ, DAC_JOYSTICK_Z);
+        }
+        if (data->command.setFeedrate) {
+            dac.analogWrite(data->feedrate, DAC_FEEDRATE);
+        }
+        if (data->command.setRotationSpeed) {
+            dac.analogWrite(data->rotationSpeed, DAC_ROTATION_SPEED);
+        }
+        if (data->command.setAxisSelect) {
+            setAuswahlX(data->selectAxisX);
+            setAuswahlY(data->selectAxisY);
+            setAuswahlZ(data->selectAxisZ);
+        }
+        if (data->command.setOk) {
+            setOK(data->ok);
+        }
+        if (data->command.setProgrammStart) {
+            setProgrammStart(data->programmStart);
+        }
+        if (data->command.setMotorStart) {
+            setMotorStart(data->motorStart);
+        }
+        if (data->command.setEna) {
+            setENA(data->ena);
+        }
+        if (data->command.setSpeed1) {
+            setSpeed1(data->speed1);
+        }
+        if (data->command.setSpeed2) {
+            setSpeed2(data->speed2);
+        }
     }
-    if (data->command.setFeedrate)
-    {
-        dac.analogWrite(data->feedrate, DAC_FEEDRATE);
-    }
-    if (data->command.setRotationSpeed)
-    {
-        dac.analogWrite(data->rotationSpeed, DAC_ROTATION_SPEED);
-    }
-    if (data->command.setAxisSelect)
-    {
-        setAuswahlX(data->selectAxisX);
-        setAuswahlY(data->selectAxisY);
-        setAuswahlZ(data->selectAxisZ);
-    }
-    if (data->command.setOk)
-    {
-        setOK(data->ok);
-    }
-    if (data->command.setProgrammStart)
-    {
-        setProgrammStart(data->programmStart);
-    }
-    if (data->command.setMotorStart)
-    {
-        setMotorStart(data->motorStart);
-    }
-    if (data->command.setEna)
-    {
-        setENA(data->ena);
-    }
-    if (data->command.setSpeed1)
-    {
-        setSpeed1(data->speed1);
-    }
-    if (data->command.setSpeed2)
-    {
-        setSpeed2(data->speed2);
-    }
-#endif
-    if (data->command.setOutput1)
-    {
+    if (data->command.setOutput1) {
         setOut1(data->output1);
     }
-    if (data->command.setOutput2)
-    {
+    if (data->command.setOutput2) {
         setOut2(data->output2);
     }
-    if (data->command.setOutput3)
-    {
+    if (data->command.setOutput3) {
         setOut3(data->output3);
     }
-    if (data->command.setOutput4)
-    {
+    if (data->command.setOutput4) {
         setOut4(data->output4);
     }
 }
@@ -578,10 +547,8 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data)
 /**
  * @param number Number of the input. Possible values are 1-10.
  */
-bool IOCONTROL::getIn(byte number, bool invert)
-{
-    switch (number)
-    {
+bool IOCONTROL::getIn(byte number, bool invert) {
+    switch (number) {
     case 1:
         return getIn1(invert);
         break;
@@ -618,11 +585,9 @@ bool IOCONTROL::getIn(byte number, bool invert)
     }
 }
 
-void IOCONTROL::readTemperatures()
-{
+void IOCONTROL::readTemperatures() {
     tempSensors.requestTemperatures();
-    for (uint8_t i = 0; i < tempSensors.getDS18Count(); i++)
-    {
+    for (uint8_t i = 0; i < tempSensors.getDS18Count(); i++) {
         // The order is turned around, so that the onboard sensor is always the first one
         uint8_t index = tempSensors.getDS18Count() - 1 - i;
         this->temperatures[index] = tempSensors.getTempCByIndex(i);
@@ -631,94 +596,72 @@ void IOCONTROL::readTemperatures()
     }
 }
 
-int IOCONTROL::getTemperature(byte number)
-{
-    return this->temperatures[number];
-}
+int IOCONTROL::getTemperature(byte number) { return this->temperatures[number]; }
 
-void IOCONTROL::startBlinkRJ45LED()
-{
-    this->panelLED.startBlink();
-}
+void IOCONTROL::startBlinkRJ45LED() { this->panelLED.startBlink(); }
 
-void IOCONTROL::stopBlinkRJ45LED()
-{
-    this->panelLED.stopBlink();
-}
+void IOCONTROL::stopBlinkRJ45LED() { this->panelLED.stopBlink(); }
 
-void IOCONTROL::updateBounceInputs()
-{
-    for (byte i = 0; i < sizeof(bounceInputs) / sizeof(BOUNCE_INPUT); i++)
-    {
-        uint32_t currentMillis = millis();
-        BOUNCE_INPUT *input = &this->bounceInputs[i];
-        if (currentMillis - input->lastRead > input->readInterval_MS)
-        {
-            input->lastRead = currentMillis;
-            bool currentState;
-            if (input->ioport == 1)
-            {
-                currentState = ioport1.stateOfPin(input->port);
+void IOCONTROL::updateBounceInputs() {
+    const uint32_t currentMillis = millis();
+    const size_t numInputs = sizeof(bounceInputs) / sizeof(BOUNCE_INPUT);
+
+    for (byte i = 0; i < numInputs; ++i) {
+        BOUNCE_INPUT &input = bounceInputs[i];
+
+        if (currentMillis - input.lastRead > input.readInterval_MS) {
+            input.lastRead = currentMillis;
+
+            bool currentState = (input.ioport == 1 ? ioport1 : ioport2).stateOfPin(input.port);
+
+            if (currentState != input.lastState) {
+                input.lastState = currentState;
+                input.lastChange = currentMillis;
             }
-            else
-            {
-                currentState = ioport2.stateOfPin(input->port);
-            }
-            if (currentState != input->lastState)
-            {
-                input->lastState = currentState;
-                input->lastChange = currentMillis;
-            }
-            if (currentMillis - input->lastChange > input->debounceInterval_MS)
-            {
-                if (currentState != input->state)
-                {
-                    input->state = currentState;
-                    input->lastChange = currentMillis;
-                    DPRINT("Input changed after some ms, IOPORT: ");
-                    DPRINT(input->ioport);
-                    DPRINT(" Port: ");
-                    DPRINT(input->port);
-                    DPRINT(" State: ");
-                    DPRINTLN(input->state);
+
+            if (currentMillis - input.lastChange > input.debounceInterval_MS) {
+                if (currentState != input.state) {
+                    input.state = currentState;
+                    input.lastChange = currentMillis;
+
+                    DPRINT("Input changed, IOPORT: " + String(input.ioport) + ", Port: " + String(input.port));
+                    DPRINT(" (");
+                    DPRINT(input.ioport == 1 ? IOPort1Mapping[input.port] : IOPort2Mapping[input.port]);
+                    DPRINT("), State: ");
+                    DPRINTLN(input.state);
                 }
             }
         }
     }
 }
 
-void IOCONTROL::updateClientData()
-{
+void IOCONTROL::updateClientData() {
     dataToClient.autosquareRunning = stepperControl.autosquareRunning;
     dataToClient.alarmState = this->getAlarmAll();
     dataToClient.spindelState = this->getSpindelOnOff();
 }
 
-void IOCONTROL::enableControllerDirBuffer()
-{
-#if OCS2_VERSION >= 9
-    DPRINTLN("Enable Controller dir buffer");
-    digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, LOW);
-#endif
+void IOCONTROL::enableControllerDirBuffer() {
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isHigherThan(2, 9) || versionManager.isBoardType(BOARD_TYPE::OCS2_Mini)) {
+        DPRINTLN("Enable Controller dir buffer");
+        digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, LOW);
+    }
 }
-void IOCONTROL::disableControllerDirBuffer()
-{
-#if OCS2_VERSION >= 9
-    DPRINTLN("Disable Controller dir buffer");
-    digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, HIGH);
-#endif
+void IOCONTROL::disableControllerDirBuffer() {
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isHigherThan(2, 9) || versionManager.isBoardType(BOARD_TYPE::OCS2_Mini)) {
+        DPRINTLN("Disable Controller dir buffer");
+        digitalWrite(CONTROLLER_DIR_BUFFER_ENABLE_PIN, HIGH);
+    }
 }
-void IOCONTROL::enableDACOutputs()
-{
-#if OCS2_VERSION >= 10
-    digitalWrite(ESP32_DAC_ENABLE_PIN, HIGH);
-#endif
+void IOCONTROL::enableDACOutputs() {
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isHigherThan(2, 10) || versionManager.isBoardType(BOARD_TYPE::OCS2_Mini)) {
+        digitalWrite(ESP32_DAC_ENABLE_PIN, HIGH);
+    }
 }
-void IOCONTROL::disableDACOutputs()
-{
-#if OCS2_VERSION >= 10
-    digitalWrite(ESP32_DAC_ENABLE_PIN, LOW);
-#endif
+void IOCONTROL::disableDACOutputs() {
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isHigherThan(2, 10) || versionManager.isBoardType(BOARD_TYPE::OCS2_Mini)) {
+        digitalWrite(ESP32_DAC_ENABLE_PIN, LOW);
+    }
 }
 
 IOCONTROL ioControl;

@@ -40,7 +40,7 @@ typedef struct
 } BOUNCE_INPUT;
 
 /** enum with mapping names of ports */
-enum
+enum IOPort1
 {
     IO1_DIRX,
     IO1_DIRY,
@@ -60,7 +60,7 @@ enum
     IO1_AUTOSQUARE
 };
 
-enum
+enum IOPort2
 {
     IO2_IN1,
     IO2_IN2,
@@ -112,7 +112,6 @@ public:
     void setDirB(bool value);
     void setDirC(bool value);
 
-#if ESP_HANDWHEEL == true
     void setSpeed1(bool value);
     void setSpeed2(bool value);
     void setAuswahlX(bool value);
@@ -122,7 +121,6 @@ public:
     void setMotorStart(bool value);
     void setProgrammStart(bool value);
     void blinkPanelLED();
-#endif
 
     void setENA(bool value);
     void setOut1(bool value);
@@ -130,13 +128,11 @@ public:
     void setOut3(bool value);
     void setOut4(bool value);
 
-// DAC
-#if ESP_HANDWHEEL == true
+    // DAC
     void resetJoySticksToDefaults();
     void dacSetAllChannel(int value);
     void setFeedrate(int value);
     void setRotationSpeed(int value);
-#endif
 
     // general
     void writeDataBag(DATA_TO_CONTROL *data);
@@ -162,10 +158,8 @@ private:
     // Task handler
     static void ioControlTask(void *pvParameters);
     static void ioPortTask(void *pvParameters);
+    static void ioPortCheckTask(void *pvParameters);
     static void writeOutputsTask(void *pvParameters);
-    TaskHandle_t ioPortTaskHandle;
-    TaskHandle_t ioControlTaskHandle;
-    TaskHandle_t writeOutputsTaskHandle;
 
     // Temp sensors
     int temperatures[5];
@@ -174,8 +168,8 @@ private:
 
     LEDCONTROLLER panelLED = LEDCONTROLLER(ESP_PANEL_LED_PIN);
     BOUNCE_INPUT bounceInputs[3] = {
-        {/* ioport */ 1, /* port */ IO1_ALARMALL, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ false, /* readInterval */ 1, /* debounce */ 10},
-        {/* ioport */ 1, /* port */ IO1_AUTOSQUARE, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ false, /* readInterval */ 1, /* debounce */ 10},
+        {/* ioport */ 1, /* port */ IO1_ALARMALL, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ true, /* readInterval */ 1, /* debounce */ 10},
+        {/* ioport */ 1, /* port */ IO1_AUTOSQUARE, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ true, /* readInterval */ 1, /* debounce */ 10},
         {/* ioport */ 2, /* port */ IO2_SPINDEL, /* lastRead */ 0, /* lastChange */ 0, /* lastState */ false, /* state */ false, /* readInterval */ 1, /* debounce */ 10}};
     void updateBounceInputs();
     void updateClientData();
@@ -183,5 +177,4 @@ private:
     uint32_t lastI2CCheck = 0;
 
     uint32_t lastClientDataUpdate = 20000;
-    uint32_t lastOutputsWritten_MS = 20000;
 };

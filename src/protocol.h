@@ -7,8 +7,7 @@
 #define WIFI_TIMEOUT_CHECK_INTERVAL_MS 5
 
 // This struct describes what data is send and what is expected
-typedef struct
-{
+typedef struct {
     unsigned setJoystick : 1;
     unsigned setFeedrate : 1;
     unsigned setRotationSpeed : 1;
@@ -24,14 +23,13 @@ typedef struct
     unsigned setOutput2 : 1;
     unsigned setOutput3 : 1;
     unsigned setOutput4 : 1;
-    unsigned returnACK : 1;           // Return ACK to client
-    unsigned returnData : 1;          // Return mainboard data to client, this can be the temperature, autosquaring state and so son and replaces ACK
-    uint16_t updateInterval_MS;       // Interval in ms the client sends data to the mainboard
-    uint16_t updateIntervalSerial_MS; // Interval in ms the client sends data to the mainboard
+    unsigned returnACK : 1;             // Return ACK to client
+    unsigned returnData : 1;            // Return mainboard data to client, this can be the temperature, autosquaring state and so son and replaces ACK
+    uint16_t updateInterval_MS;         // Interval in ms the client sends data to the mainboard
+    uint16_t updateIntervalSerial_MS;   // Interval in ms the client sends data to the mainboard
 } DATA_COMMAND;
 
-typedef struct
-{
+typedef struct {
     unsigned setJoystick : 1;
     unsigned setFeedrate : 1;
     unsigned setRotationSpeed : 1;
@@ -56,7 +54,7 @@ typedef struct
     uint16_t integerAddress;
     uint8_t macAddress[6];
     unsigned ignored : 1;
-    uint16_t updateInterval_MS; // Interval in ms the client sends data to the mainboard
+    uint16_t updateInterval_MS;   // Interval in ms the client sends data to the mainboard
     bool isSerialClient;
 } CLIENT_DATA;
 
@@ -64,8 +62,7 @@ typedef struct
 // Max size of this struct is 250 bytes
 // uint16_t : 2Bytes
 // unsigned : 1 Bit each
-typedef struct
-{
+typedef struct {
     byte softwareVersion;
     uint16_t joystickX;
     uint16_t joystickY;
@@ -90,8 +87,7 @@ typedef struct
 } DATA_TO_CONTROL;
 
 // This struct describes the auto square data
-typedef struct
-{
+typedef struct {
     unsigned axisActive : 1;
     uint8_t axisMotor1State;
     uint8_t axisMotor2State;
@@ -102,20 +98,18 @@ typedef struct
 // Max size of this struct is 250
 // uint16_t : 2Bytes
 // unsigned : 1 Bit each
-typedef struct
-{
+typedef struct {
     byte softwareVersion;
     int temperatures[5];
     unsigned autosquareRunning : 1;
     unsigned spindelState : 1;
     unsigned alarmState : 1;
-    unsigned peerIgnored : 1; // This peer is ignored by the mainboard and should stop sending data
+    unsigned peerIgnored : 1;   // This peer is ignored by the mainboard and should stop sending data
     AUTOSQUARE_STATE autosquareState[3];
 } DATA_TO_CLIENT;
 
-class PROTOCOL
-{
-public:
+class PROTOCOL {
+  public:
     void setup();
     void setupESPNOW();
     void setupSerial();
@@ -125,11 +119,12 @@ public:
     static bool lockSending;
     static bool isSerialConnected();
 
-private:
     static void onDataSent(const uint8_t *address, esp_now_send_status_t status);
     static void onDataRecv(const uint8_t *address, const uint8_t *incomingData, int len);
+
+  private:
     static esp_err_t sendMessageToClient(uint8_t *address, DATA_TO_CLIENT *data);
-    // Saves that kind of functions are currently send to the esp by external devices
+    // Saves what kind of functions are currently send to the esp by external devices
     // For example Handwheel 1 sends joystick data and Handwheel 2 sends feedrate data
     static CLIENT_DATA currentControls;
 
@@ -144,9 +139,7 @@ private:
     static void setDataAccordingToCommand(CLIENT_DATA *client, DATA_TO_CONTROL *incomingDataToControl);
 
     static void protocolTaskHandler(void *pvParameters);
-    TaskHandle_t protocolTask;
     static void serialTaskHandler(void *pvParameters);
-    TaskHandle_t serialTask;
 
     static bool serialConnected;
     static uint32_t lastSerialPackageReceived;

@@ -4,10 +4,11 @@
 
 #define ESP_PANEL_LED_PIN 5
 
-#define TEMPERATURE_SENSOR_PIN 25 // DS18B20 Sensor
+#define TEMPERATURE_SENSOR_PIN 25   // DS18B20 Sensor
 
 #define CONTROLLER_DIR_BUFFER_ENABLE_PIN 27
 #define ESP32_DAC_ENABLE_PIN 32
+#define FUNCTION_BUTTON_PIN 34
 
 // Motor Step pins
 #define STEP_X_PIN 12
@@ -21,13 +22,10 @@
 #define IOInterrupt2Pin 39
 
 // I2C Pins
-#if OCS2_VERSION == 4 || OCS2_VERSION == 5
-#define I2C_BUS_SDA 17
-#define I2C_BUS_SCL 16
-#else
+#define I2C_BUS_SDA_OLD 17
+#define I2C_BUS_SCL_OLD 16
 #define I2C_BUS_SDA 21
 #define I2C_BUS_SCL 22
-#endif
 
 // ESP32 Panel UART Pins
 #define ESP32_PANEL_RX_PIN 16

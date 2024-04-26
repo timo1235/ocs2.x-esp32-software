@@ -65,19 +65,7 @@ class STEPPERCONTROL
 public:
     STEPPERCONTROL();
     void setup();
-    void addAxis(
-        AXIS motor1,
-        byte motor1EndstopInput,
-        bool motor1EndstopInverted,
-        float motor1DriveBackDistance_mm,
-        AXIS motor2,
-        byte motor2EndstopInput,
-        bool motor2EndstopInverted,
-        float motor2DriveBackDistance_mm,
-        uint16_t stepsPerRevolution,
-        uint16_t mmPerRevolution,
-        uint16_t asSpeed_mm_s,
-        bool reverseMotorDirection);
+    void addAxis(AUTOSQUARE_CONFIG config);
     void autosquareProcess();
     void printAutosquareConfig();
 
@@ -90,9 +78,7 @@ private:
     uint32_t timeASButtonPressed = 0;
     bool ASButtonPressed = false;
     bool getAutosquareButtonState();
-    uint32_t lastASButtonCheck_MS = 0;
     static void stepperTaskHandler(void *pvParameters);
-    TaskHandle_t stepperTask;
 
     AUTOSQUARE_CONFIG autosquareConfigs[3];
     void initializeAutosquare();

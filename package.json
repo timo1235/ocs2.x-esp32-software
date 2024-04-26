@@ -12,8 +12,14 @@
     "type": "git",
     "url": "https://github.com/timo1235/ocs2.x-esp32-software"
   },
-  "version": "1.0.2",
+  "version": "1.1.0",
   "license": "MIT",
   "frameworks": "arduino",
-  "platforms": "*"
+  "platforms": "*",
+  "scripts": {
+    "dev": "http-server esptool-flasher"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
 }
