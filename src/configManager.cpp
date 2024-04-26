@@ -119,11 +119,13 @@ void CONFIGMANAGER::startWiFi() {
         [](void *parameter) {
         CONFIGMANAGER *configManager = static_cast<CONFIGMANAGER *>(parameter);
         for (;;) {
-            if (GLOBAL.IOControlInitialized == false || GLOBAL.protocolInitialized == false) {
-                DPRINTLN("ConfigManager Wifi Setup: waiting for IOControl & Protocol to be initialized");
-            }
-            while (GLOBAL.IOControlInitialized == false || GLOBAL.protocolInitialized == false) {
-                vTaskDelay(pdMS_TO_TICKS(1000));   // Wait for 1 second
+            if (!versionManager.isBoardType(BOARD_TYPE::undefined)) {
+                if (GLOBAL.IOControlInitialized == false || GLOBAL.protocolInitialized == false) {
+                    DPRINTLN("ConfigManager Wifi Setup: waiting for IOControl & Protocol to be initialized");
+                }
+                while (GLOBAL.IOControlInitialized == false || GLOBAL.protocolInitialized == false) {
+                    vTaskDelay(pdMS_TO_TICKS(1000));   // Wait for 1 second
+                }
             }
 
             if (WiFi.getMode() != WIFI_AP_STA) {
