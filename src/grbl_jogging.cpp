@@ -6,38 +6,47 @@ int nextIntervalWaitTime = 10;
 unsigned long lastCommandTime = 0;
 unsigned long lastSettingsCheckTimeMS = 0;
 
-GRBL_JOGGING::GRBL_JOGGING()
-{
-}
+GRBL_JOGGING::GRBL_JOGGING() {}
 
-void GRBL_JOGGING::setup()
-{
-    xSettings = {0, 0, 0};
-    ySettings = {0, 0, 0};
-    zSettings = {0, 0, 0};
-
-    SerialGRBL.begin(115200, SERIAL_8N1, FLUIDNC_RX_PIN, FLUIDNC_TX_PIN);
-
-#ifdef USE_GRBL_JOGGING
+void GRBL_JOGGING::setup() {
+    if (versionManager.isBoardType(BOARD_TYPE::undefined)) {
+        DPRINTLN("GRBLJogging: Board type is undefined. Functionalities are disabled.");
+        return;
+    }
+    if (!mainConfig.fluidNCJogging) {
+        return;
+    }
     xTaskCreatePinnedToCore(
-        GRBL_JOGGING::loopTask,
-        "GRBL JOGGING Task",
-        10000,
-        this,
-        1,
-        NULL,
-        1);
-#endif
+        [](void *parameter) {
+        GRBL_JOGGING *grblJogging = static_cast<GRBL_JOGGING *>(parameter);
+        for (;;) {
+            if (GLOBAL.protocolInitialized == false) {
+                DPRINTLN("GRBLJogging: waiting for Protocol to be initialized");
+            }
+            while (GLOBAL.protocolInitialized == false) {
+                vTaskDelay(pdMS_TO_TICKS(1000));   // Wait for 1 second
+            }
+            grblJogging->xSettings = {0, 0, 0};
+            grblJogging->ySettings = {0, 0, 0};
+            grblJogging->zSettings = {0, 0, 0};
+
+            SerialGRBL.begin(115200, SERIAL_8N1, FLUIDNC_RX_PIN, FLUIDNC_TX_PIN);
+
+            xTaskCreatePinnedToCore(GRBL_JOGGING::loopTask, "GRBL JOGGING Task", 4096, grblJogging, DEFAULT_TASK_PRIORITY, NULL, DEFAULT_TASK_CPU);
+            GLOBAL.grblJoggingInitialized = true;
+            DPRINTLN("GRBLJogging: initialized");
+            vTaskDelete(NULL);   // Delete the task after setup
+        }
+    },
+        "GRBLJogging setup", 2048, this, DEFAULT_TASK_PRIORITY, NULL, DEFAULT_TASK_CPU);
 }
 
-void GRBL_JOGGING::loopTask(void *pvParameters)
-{
-    auto *grblJogging = (GRBL_JOGGING *)pvParameters;
-    for (;;)
-    {
+void GRBL_JOGGING::loopTask(void *pvParameters) {
+    auto *grblJogging = (GRBL_JOGGING *) pvParameters;
+    DPRINTLN("GRBLJoggingTask on CPU" + String(xPortGetCoreID()) + ": Task started");
+    for (;;) {
         // Do not send jogging commands if axis settings are not read
-        if (grblJogging->axisSettingsRead)
-        {
+        if (grblJogging->axisSettingsRead) {
             grblJogging->checkAndSendJoggingCommands();
         }
 
@@ -49,18 +58,16 @@ void GRBL_JOGGING::loopTask(void *pvParameters)
         // }
 
         // Try to read axis settings every 2 seconds
-        if (!grblJogging->axisSettingsRead && millis() - lastSettingsCheckTimeMS > 2000)
-        {
+        if (!grblJogging->axisSettingsRead && millis() - lastSettingsCheckTimeMS > 2000) {
             grblJogging->checkAndReadAxisSettings();
             lastSettingsCheckTimeMS = millis();
         }
 
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 
-void GRBL_JOGGING::checkAndSendJoggingCommands()
-{
+void GRBL_JOGGING::checkAndSendJoggingCommands() {
     unsigned long currentTime = millis();
 
     // Array to hold commands for X, Y, and Z axes
@@ -68,38 +75,32 @@ void GRBL_JOGGING::checkAndSendJoggingCommands()
     bool isJoystickCentered = true;
 
     // Iterate through each axis to check for movement
-    for (int axis = 0; axis < 3; axis++)
-    {
-        int joystickPosition = axis == 0 ? dataToControl.joystickX : axis == 1 ? dataToControl.joystickY
-                                                                               : dataToControl.joystickZ;
+    for (int axis = 0; axis < 3; axis++) {
+        int joystickPosition = axis == 0 ? dataToControl.joystickX : axis == 1 ? dataToControl.joystickY : dataToControl.joystickZ;
         int deviation = abs(joystickPosition - joystickCenter);
         int direction = joystickPosition > joystickCenter ? 1 : -1;
 
         // Check if joystick moved beyond tolerance
-        if (deviation > tolerance)
-        {
+        if (deviation > tolerance) {
             isJoystickCentered = false;
-            float speed = calculateSpeed(axis, joystickPosition);         // Speed in mm/second
-            float timeIntervalInSeconds = nextIntervalWaitTime / 1000.0f; // Convert ms to seconds
-            float distance = speed * timeIntervalInSeconds;               // Distance covered in the interval
+            float speed = calculateSpeed(axis, joystickPosition);           // Speed in mm/second
+            float timeIntervalInSeconds = nextIntervalWaitTime / 1000.0f;   // Convert ms to seconds
+            float distance = speed * timeIntervalInSeconds;                 // Distance covered in the interval
 
             // If not jogging, multiply the distance by 5, otherwise grbl starts already deaccelerating before the next command
-            if (!isJogging)
-            {
+            if (!isJogging) {
                 distance = distance * 5;
             }
 
             commands[axis].speed = speed;
-            commands[axis].distance = distance * direction / 60; // Apply direction to the distance
+            commands[axis].distance = distance * direction / 60;   // Apply direction to the distance
             commands[axis].move = true;
         }
     }
 
     // Send jog commands if joystick is not centered and the interval has passed
-    if (!isJoystickCentered && currentTime - lastCommandTime >= nextIntervalWaitTime)
-    {
-        if (isJogging)
-        {
+    if (!isJoystickCentered && currentTime - lastCommandTime >= nextIntervalWaitTime) {
+        if (isJogging) {
             nextIntervalWaitTime = 150;
         }
         sendJoggingCommand(commands);
@@ -107,17 +108,14 @@ void GRBL_JOGGING::checkAndSendJoggingCommands()
     }
 
     // Always check for the jog cancel command, allowing for an immediate stop
-    if (isJoystickCentered)
-    {
-        sendJogCancelCommand(); // Sends the jog cancel command if the joystick is centered
+    if (isJoystickCentered) {
+        sendJogCancelCommand();   // Sends the jog cancel command if the joystick is centered
     }
 }
 
-int GRBL_JOGGING::calculateSpeed(int axis, int joystickPosition)
-{
+int GRBL_JOGGING::calculateSpeed(int axis, int joystickPosition) {
     int maxSpeedForAxis;
-    switch (axis)
-    {
+    switch (axis) {
     case 0:
         maxSpeedForAxis = xSettings.maxRate;
         break;
@@ -134,17 +132,14 @@ int GRBL_JOGGING::calculateSpeed(int axis, int joystickPosition)
 
     // Calculate based on the deviation from the center
     int deviation = abs(joystickPosition - joystickCenter) - tolerance;
-    return map(deviation, 0, joystickCenter - tolerance, MIN_JOGGING_SPEED, maxSpeedForAxis);
+    return map(deviation, 0, joystickCenter - tolerance, mainConfig.fluidNCMinJoggingSpeed, maxSpeedForAxis);
 }
 
-void GRBL_JOGGING::sendJoggingCommand(AxisCommand commands[3])
-{
+void GRBL_JOGGING::sendJoggingCommand(AxisCommand commands[3]) {
     String command = "$J=G91 G21";
 
-    for (int i = 0; i < 3; i++)
-    {
-        if (commands[i].move)
-        {
+    for (int i = 0; i < 3; i++) {
+        if (commands[i].move) {
             command += axisNames[i];
             command += commands[i].distance;
         }
@@ -152,21 +147,16 @@ void GRBL_JOGGING::sendJoggingCommand(AxisCommand commands[3])
 
     // Find max speed for axes
     int maxSpeed = 0;
-    for (int i = 0; i < 3; i++)
-    {
-        if (commands[i].move && abs(commands[i].speed) > maxSpeed)
-        {
+    for (int i = 0; i < 3; i++) {
+        if (commands[i].move && abs(commands[i].speed) > maxSpeed) {
             maxSpeed = abs(commands[i].speed);
         }
     }
 
-    if (maxSpeed > 0)
-    {
+    if (maxSpeed > 0) {
         command += "F";
         command += String(maxSpeed);
-    }
-    else
-    {
+    } else {
         // Without speed, we do not need to send a command
         return;
     }
@@ -180,45 +170,37 @@ void GRBL_JOGGING::sendJoggingCommand(AxisCommand commands[3])
     waitForAcknowledgment();
 }
 
-void GRBL_JOGGING::waitForAcknowledgment()
-{
+void GRBL_JOGGING::waitForAcknowledgment() {
     unsigned long startTime = millis();
-    const unsigned long timeout = 1000; // Timeout after 1000 milliseconds (1 second)
+    const unsigned long timeout = 1000;   // Timeout after 1000 milliseconds (1 second)
     String response = "";
 
-    while (millis() - startTime < timeout)
-    {
-        if (SerialGRBL.available())
-        {
+    while (millis() - startTime < timeout) {
+        if (SerialGRBL.available()) {
             char c = SerialGRBL.read();
             response += c;
-            if (response.endsWith("\n"))
-            { // End of line character, process the response
-                if (response.indexOf("ok") != -1)
-                {
-                    return; // "ok" received, exit the function
+            if (response.endsWith("\n")) {   // End of line character, process the response
+                if (response.indexOf("ok") != -1) {
+                    return;   // "ok" received, exit the function
                 }
-                response = ""; // Reset response for the next line
+                response = "";   // Reset response for the next line
             }
         }
-        vTaskDelay(5 / portTICK_PERIOD_MS); // Yield to other tasks
+        vTaskDelay(5 / portTICK_PERIOD_MS);   // Yield to other tasks
     }
-    Serial.println("Timeout waiting for ok"); // Debugging
+    Serial.println("Timeout waiting for ok");   // Debugging
 }
 
-void GRBL_JOGGING::checkBuffer()
-{
+void GRBL_JOGGING::checkBuffer() {
     SerialGRBL.write("?");
     String line;
-    while (SerialGRBL.available() > 0)
-    {
+    while (SerialGRBL.available() > 0) {
         line = SerialGRBL.readStringUntil('\n');
         // Serial.println(line);
     }
 }
 
-void GRBL_JOGGING::sendJogCancelCommand()
-{
+void GRBL_JOGGING::sendJogCancelCommand() {
     isJogging = false;
     nextIntervalWaitTime = 50;
     SerialGRBL.write(0x85);
@@ -226,16 +208,12 @@ void GRBL_JOGGING::sendJogCancelCommand()
     vTaskDelay(100 / portTICK_PERIOD_MS);
 }
 
-void GRBL_JOGGING::checkAndReadAxisSettings()
-{
+void GRBL_JOGGING::checkAndReadAxisSettings() {
     getAxisInformationFromFluidNC();
 
-    if (xSettings.maxRate > 0 && ySettings.maxRate > 0 && zSettings.maxRate > 0)
-    {
+    if (xSettings.maxRate > 0 && ySettings.maxRate > 0 && zSettings.maxRate > 0) {
         axisSettingsRead = true;
-    }
-    else
-    {
+    } else {
         Serial.println("Failed to read axis settings from FluidNC, trying again in some seconds.");
         return;
     }
@@ -262,8 +240,7 @@ void GRBL_JOGGING::checkAndReadAxisSettings()
     Serial.println(zSettings.acceleration);
 }
 
-void GRBL_JOGGING::getAxisInformationFromFluidNC()
-{
+void GRBL_JOGGING::getAxisInformationFromFluidNC() {
     unsigned long startTime = millis();
     String line;
 
@@ -271,10 +248,8 @@ void GRBL_JOGGING::getAxisInformationFromFluidNC()
     SerialGRBL.println("$S");
     SerialGRBL.flush();
 
-    while (millis() - startTime < 500)
-    {
-        while (SerialGRBL.available() > 0)
-        {
+    while (millis() - startTime < 500) {
+        while (SerialGRBL.available() > 0) {
             line = SerialGRBL.readStringUntil('\n');
             parseFluidNCSettingLine(line);
         }
@@ -282,47 +257,31 @@ void GRBL_JOGGING::getAxisInformationFromFluidNC()
     }
 }
 
-void GRBL_JOGGING::parseFluidNCSettingLine(String line)
-{
+void GRBL_JOGGING::parseFluidNCSettingLine(String line) {
     // Parsen von MaxRate
-    if (line.startsWith("$Grbl/MaxRate/X="))
-    {
+    if (line.startsWith("$Grbl/MaxRate/X=")) {
         xSettings.maxRate = line.substring(16).toFloat();
-    }
-    else if (line.startsWith("$Grbl/MaxRate/Y="))
-    {
+    } else if (line.startsWith("$Grbl/MaxRate/Y=")) {
         ySettings.maxRate = line.substring(16).toFloat();
-    }
-    else if (line.startsWith("$Grbl/MaxRate/Z="))
-    {
+    } else if (line.startsWith("$Grbl/MaxRate/Z=")) {
         zSettings.maxRate = line.substring(16).toFloat();
     }
 
     // Parsen von Resolution
-    else if (line.startsWith("$Grbl/Resolution/X="))
-    {
+    else if (line.startsWith("$Grbl/Resolution/X=")) {
         xSettings.resolution = line.substring(19).toFloat();
-    }
-    else if (line.startsWith("$Grbl/Resolution/Y="))
-    {
+    } else if (line.startsWith("$Grbl/Resolution/Y=")) {
         ySettings.resolution = line.substring(19).toFloat();
-    }
-    else if (line.startsWith("$Grbl/Resolution/Z="))
-    {
+    } else if (line.startsWith("$Grbl/Resolution/Z=")) {
         zSettings.resolution = line.substring(19).toFloat();
     }
 
     // Parsen von Acceleration
-    else if (line.startsWith("$Grbl/Acceleration/X="))
-    {
+    else if (line.startsWith("$Grbl/Acceleration/X=")) {
         xSettings.acceleration = line.substring(21).toFloat();
-    }
-    else if (line.startsWith("$Grbl/Acceleration/Y="))
-    {
+    } else if (line.startsWith("$Grbl/Acceleration/Y=")) {
         ySettings.acceleration = line.substring(21).toFloat();
-    }
-    else if (line.startsWith("$Grbl/Acceleration/Z="))
-    {
+    } else if (line.startsWith("$Grbl/Acceleration/Z=")) {
         zSettings.acceleration = line.substring(21).toFloat();
     }
 }

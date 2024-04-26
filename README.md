@@ -32,6 +32,12 @@ Take a look at the `src/configuration` file for the configuration.
 
 ## latest
 
+## 1.1.0
+- Some refactorings and optimizations
+- Added OCS2 Mini support
+- Completely refactored configuration
+  - Added webinterface for configuration
+
 ## 1.0.7
 - Added experimental functionality for fluidnc jogging with the wireless handwheel
   - Needs to be activated in the `configuration.h`

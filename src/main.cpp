@@ -1,65 +1,32 @@
+
 #include <includes.h>
 
-TaskHandle_t DisplayTask;
+GLOBAL_VARS GLOBAL;
 
-void setup()
-{
+uint32_t cpu0Counter = 0;
+uint32_t cpu1Counter = 0;
+uint32_t cpu0LastMessage = 0;
+uint32_t cpu1LastMessage = 0;
+
+void setup() {
+    GLOBAL.IOControlInitialized = false;
+    GLOBAL.protocolInitialized = false;
+    GLOBAL.grblJoggingInitialized = false;
+    GLOBAL.uiHandlerInitialized = false;
+    GLOBAL.configManagerWiFiInitialized = false;
+
     Serial.begin(115200);
+    Serial.print("OCS2 ESP32 Firmware version: ");
+    Serial.println(FIRMWARE_VERSION);
 
+    // start config manager first - this loads all configuration
+    configManager.setup();
+    versionManager.setup();
     ioControl.setup();
     protocol.setup();
 
-#if USE_GRBL_JOGGING
     grblJogging.setup();
-#endif
-#if AXIS1_ACTIVE || AXIS2_ACTIVE || AXIS3_ACTIVE
     stepperControl.setup();
-#endif
-#if AXIS1_ACTIVE
-    stepperControl.addAxis(
-        AXIS1_MOTOR1,
-        AXIS1_MOTOR1_ENDSTOP_INPUT,
-        AXIS1_MOTOR1_ENDSTOP_INVERTED,
-        AXIS1_MOTOR1_DRIVE_FROM_ENDSTOP_DISTANCE_MM,
-        AXIS1_MOTOR2,
-        AXIS1_MOTOR2_ENDSTOP_INPUT,
-        AXIS1_MOTOR2_ENDSTOP_INVERTED,
-        AXIS1_MOTOR2_DRIVE_FROM_ENDSTOP_DISTANCE_MM,
-        AXIS1_STEPS_PER_REVOLUTION,
-        AXIS1_MM_PER_REVOLUTION,
-        AXIS1_AS_SPEED_MM_S,
-        AXIS1_REVERSE_MOTOR_DIRECTION);
-#endif
-#if AXIS2_ACTIVE
-    stepperControl.addAxis(
-        AXIS2_MOTOR1,
-        AXIS2_MOTOR1_ENDSTOP_INPUT,
-        AXIS2_MOTOR1_ENDSTOP_INVERTED,
-        AXIS2_MOTOR1_DRIVE_FROM_ENDSTOP_DISTANCE_MM,
-        AXIS2_MOTOR2,
-        AXIS2_MOTOR2_ENDSTOP_INPUT,
-        AXIS2_MOTOR2_ENDSTOP_INVERTED,
-        AXIS2_MOTOR2_DRIVE_FROM_ENDSTOP_DISTANCE_MM,
-        AXIS2_STEPS_PER_REVOLUTION,
-        AXIS2_MM_PER_REVOLUTION,
-        AXIS2_AS_SPEED_MM_S,
-        AXIS2_REVERSE_MOTOR_DIRECTION);
-#endif
-#if AXIS3_ACTIVE
-    stepperControl.addAxis(
-        AXIS3_MOTOR1,
-        AXIS3_MOTOR1_ENDSTOP_INPUT,
-        AXIS3_MOTOR1_ENDSTOP_INVERTED,
-        AXIS3_MOTOR1_DRIVE_FROM_ENDSTOP_DISTANCE_MM,
-        AXIS3_MOTOR2,
-        AXIS3_MOTOR2_ENDSTOP_INPUT,
-        AXIS3_MOTOR2_ENDSTOP_INVERTED,
-        AXIS3_MOTOR2_DRIVE_FROM_ENDSTOP_DISTANCE_MM,
-        AXIS3_STEPS_PER_REVOLUTION,
-        AXIS3_MM_PER_REVOLUTION,
-        AXIS3_AS_SPEED_MM_S,
-        AXIS3_REVERSE_MOTOR_DIRECTION);
-#endif
 
     // DPRINT("Packagesize DATA_TO_CONTROL in bytes: ");
     // DPRINTLN(sizeof(DATA_TO_CONTROL));
@@ -67,7 +34,4 @@ void setup()
     // DPRINTLN(sizeof(DATA_TO_CLIENT));
 }
 
-void loop()
-{
-    // Nothing to do here, since all the work is done in seperate tasks
-}
+void loop() { configManager.loop(); }
