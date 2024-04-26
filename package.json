@@ -17,7 +17,7 @@
   "frameworks": "arduino",
   "platforms": "*",
   "scripts": {
-    "dev": "http-server esptool-flasher"
+    "dev": "http-server docs"
   },
   "dependencies": {
     "http-server": "^14.1.1"
