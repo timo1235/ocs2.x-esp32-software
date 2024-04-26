@@ -2,7 +2,7 @@ Import("env")
 import os
 
 APP_BIN = "$BUILD_DIR/${PROGNAME}.bin"
-MERGED_BIN = os.path.join(env['PROJECT_DIR'], "esptool-flasher", "firmware", "ocs2_esp32_latest.bin")
+MERGED_BIN = os.path.join(env['PROJECT_DIR'], "docs", "firmware", "ocs2_esp32_latest.bin")
 BOARD_CONFIG = env.BoardConfig()
 
 def merge_bin(source, target, env):
