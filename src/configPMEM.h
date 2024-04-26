@@ -143,7 +143,7 @@ Autosquare Axis 2:
       label: <strong>Motor 1 Endstop Input</strong>
         Select which endstop input to use for Motor 1.
       options: '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'
-      default: 1
+      default: 3
   - axis_2_motor_1_endstop_inverted:
       label: <strong>Motor 1 Endstop Inverted</strong>
         Defines if the endstop signal for Motor 1 is inverted. Useful for different types of switches.
@@ -162,7 +162,7 @@ Autosquare Axis 2:
       label: <strong>Motor 2 Endstop Input</strong>
         Select which endstop input to use for Motor 2.
       options: '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'
-      default: 2
+      default: 4
   - axis_2_motor_2_endstop_inverted:
       label: <strong>Motor 2 Endstop Inverted</strong>
         Defines if the endstop signal for Motor 2 is inverted. Useful for different types of switches.
@@ -202,7 +202,7 @@ Autosquare Axis 3:
       label: <strong>Motor 1 Endstop Input</strong>
         Select which endstop input to use for Motor 1.
       options: '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'
-      default: 1
+      default: 5
   - axis_3_motor_1_endstop_inverted:
       label: <strong>Motor 1 Endstop Inverted</strong>
         Defines if the endstop signal for Motor 1 is inverted. Useful for different types of switches.
@@ -221,7 +221,7 @@ Autosquare Axis 3:
       label: <strong>Motor 2 Endstop Input</strong>
         Select which endstop input to use for Motor 2.
       options: '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'
-      default: 2
+      default: 6
   - axis_3_motor_2_endstop_inverted:
       label: <strong>Motor 2 Endstop Inverted</strong>
         Defines if the endstop signal for Motor 2 is inverted. Useful for different types of switches.

@@ -55,7 +55,9 @@ void STEPPERCONTROL::setup() {
 void STEPPERCONTROL::stepperTaskHandler(void *pvParameters) {
     auto *stepperControl = (STEPPERCONTROL *) pvParameters;
     for (;;) {
-
+        if (!ioControl.IOInitialized) {
+            continue;
+        }
         if (stepperControl->getAutosquareButtonState()) {
             if (!stepperControl->ASButtonPressed) {
                 DPRINTLN("StepperControl: Autosquare button first pressed - Wait the configured delay before starting");
