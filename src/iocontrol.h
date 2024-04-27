@@ -2,16 +2,16 @@
 
 #include <protocol.h>
 // Temperature Sensor library
-#include <OneWire.h>
 #include <DallasTemperature.h>
-#include <pinmap.h>
 #include <LEDController.h>
+#include <OneWire.h>
+#include <pinmap.h>
 
 #define PCA9555_ADRESS_1 0x20
 #define PCA9555_ADRESS_2 0x24
 
 #define DAC_JOYSTICK_RESET_VALUE 1023 / 2
-#define REVERSE_INPUTS true // Since the inputs have pullups installed, reading a digital 1 is OFF and a digital 0 is ON -> reserveInputs = true
+#define REVERSE_INPUTS true   // Since the inputs have pullups installed, reading a digital 1 is OFF and a digital 0 is ON -> reserveInputs = true
 #define TEMPERATURE_READ_INTERVAL_MS 10000
 #define CLIENT_DATA_UPDATE_INTERVAL_MS 5
 
@@ -27,21 +27,19 @@
 #define DAC_7 7
 #define DAC_8 8
 
-typedef struct
-{
-    byte ioport;                  // 1 or 2
-    byte port;                    // E.g. IO1_ALARMALL
-    uint32_t lastRead;            // miliis() of last read
-    uint32_t lastChange;          // miliis() of last change
-    bool lastState;               // last state of the input
-    bool state;                   // current state of the input
-    uint16_t readInterval_MS;     // How often should the input be read
-    uint16_t debounceInterval_MS; // How long should the input be stable before it is considered stable
+typedef struct {
+    byte ioport;                    // 1 or 2
+    byte port;                      // E.g. IO1_ALARMALL
+    uint32_t lastRead;              // miliis() of last read
+    uint32_t lastChange;            // miliis() of last change
+    bool lastState;                 // last state of the input
+    bool state;                     // current state of the input
+    uint16_t readInterval_MS;       // How often should the input be read
+    uint16_t debounceInterval_MS;   // How long should the input be stable before it is considered stable
 } BOUNCE_INPUT;
 
 /** enum with mapping names of ports */
-enum IOPort1
-{
+enum IOPort1 {
     IO1_DIRX,
     IO1_DIRY,
     IO1_DIRZ,
@@ -60,29 +58,10 @@ enum IOPort1
     IO1_AUTOSQUARE
 };
 
-enum IOPort2
-{
-    IO2_IN1,
-    IO2_IN2,
-    IO2_IN3,
-    IO2_IN4,
-    IO2_IN5,
-    IO2_IN6,
-    IO2_IN7,
-    IO2_IN8,
-    IO2_IN9,
-    IO2_IN10,
-    IO2_ENA,
-    IO2_SPINDEL,
-    IO2_OUT1,
-    IO2_OUT2,
-    IO2_OUT3,
-    IO2_OUT4
-};
+enum IOPort2 { IO2_IN1, IO2_IN2, IO2_IN3, IO2_IN4, IO2_IN5, IO2_IN6, IO2_IN7, IO2_IN8, IO2_IN9, IO2_IN10, IO2_ENA, IO2_SPINDEL, IO2_OUT1, IO2_OUT2, IO2_OUT3, IO2_OUT4 };
 
-class IOCONTROL
-{
-public:
+class IOCONTROL {
+  public:
     IOCONTROL();
     void setup();
     void initPCA9555();
@@ -150,11 +129,11 @@ public:
     void enableDACOutputs();
     void disableDACOutputs();
 
-    int getTemperature(byte number); // Number can be 0-4. 0 is the onboard sensor
+    int getTemperature(byte number);   // Number can be 0-4. 0 is the onboard sensor
 
     bool IOInitialized = false;
 
-private:
+  private:
     // Task handler
     static void ioControlTask(void *pvParameters);
     static void ioPortTask(void *pvParameters);
@@ -165,6 +144,8 @@ private:
     int temperatures[5];
     void readTemperatures();
     uint32_t lastTemperatureRead = 20000;
+
+    TaskHandle_t ioPortTaskHandle;
 
     LEDCONTROLLER panelLED = LEDCONTROLLER(ESP_PANEL_LED_PIN);
     BOUNCE_INPUT bounceInputs[3] = {

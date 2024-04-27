@@ -26,6 +26,7 @@ void IOCONTROL::setup() {
         DPRINTLN("IOControl: Board type is undefined. Functionalities are disabled.");
         return;
     }
+    ioPortTaskHandle = NULL;
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
@@ -109,6 +110,10 @@ void IOCONTROL::setup() {
 }
 
 void IOCONTROL::checkPCA9555() {
+    if (ioPortTaskHandle != NULL) {
+        return;
+    }
+
     xTaskCreatePinnedToCore(
         [](void *parameter) {
         IOCONTROL *ioControl = static_cast<IOCONTROL *>(parameter);
@@ -160,10 +165,11 @@ void IOCONTROL::checkPCA9555() {
                 ioControl->initPCA9555();
             }
 
-            vTaskDelete(NULL);   // Delete the task after setup
+            ioControl->ioPortTaskHandle = NULL;
+            vTaskDelete(NULL);
         }
     },
-        "Check PCA9555 Chips", 2048, this, DEFAULT_TASK_PRIORITY, NULL, DEFAULT_TASK_CPU);
+        "Check PCA9555 Chips", 2048, this, DEFAULT_TASK_PRIORITY, &ioPortTaskHandle, DEFAULT_TASK_CPU);
 }
 
 void IOCONTROL::initDirPins() {
@@ -288,11 +294,6 @@ void IOCONTROL::loop() {}
 void IOCONTROL::ioPortCheckTask(void *pvParameters) {
     auto *ioControl = (IOCONTROL *) pvParameters;
     for (;;) {
-        if (!ioControl->IOInitialized) {
-            vTaskDelay(1000);
-            continue;
-        }
-
         ioControl->checkPCA9555();
 
         vTaskDelay(1000);
