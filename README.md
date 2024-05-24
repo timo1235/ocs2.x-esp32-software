@@ -41,6 +41,9 @@ Then the WiFi hotspot should start and the wire can be disconnected again.
 
 ## latest
 
+## 1.1.1
+- Added PCB version 1.2 for OCS2 mini
+
 ## 1.1.0
 - Some refactorings and optimizations
 - Added OCS2 Mini support
