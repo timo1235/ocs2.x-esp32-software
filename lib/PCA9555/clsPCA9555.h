@@ -57,7 +57,8 @@ class PCA9555 {
     uint8_t stateOfPin(uint8_t pin);                    // Actual ISR
     void setClock(uint32_t clockFrequency);             // Clock speed
     bool begin(byte SDAPin = SDA, byte SCLPin = SCL);   // Checks if PCA is responsive
-    void pinStates();                                   // Function tied to interrupt
+    void pinStates();
+    bool isConnected();   // Check if PCA9555 is connected
 
   private:
     static PCA9555 *instancePointer;

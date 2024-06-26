@@ -1,8 +1,11 @@
 #include <includes.h>
 
-DATA_TO_CONTROL dataToControl = {
-    0, DAC_JOYSTICK_RESET_VALUE, DAC_JOYSTICK_RESET_VALUE, DAC_JOYSTICK_RESET_VALUE, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-};
+DATA_TO_CONTROL dataToControl = {.joystickX = DAC_JOYSTICK_RESET_VALUE,
+                                 .joystickY = DAC_JOYSTICK_RESET_VALUE,
+                                 .joystickZ = DAC_JOYSTICK_RESET_VALUE,
+                                 .feedrate = 0,
+                                 .rotationSpeed = 0,
+                                 .command = {.setJoystick = true, .setFeedrate = true, .setRotationSpeed = true}};
 DATA_TO_CLIENT dataToClient = {2, 0, 0, 0, 0, 0, 0};
 
 byte PROTOCOL::clientCount = 0;
@@ -22,8 +25,7 @@ void PROTOCOL::setup() {
         DPRINTLN("Protocol: Board type is undefined. Functionalities are disabled.");
         return;
     }
-    xTaskCreatePinnedToCore(
-        [](void *parameter) {
+    xTaskCreatePinnedToCore([](void *parameter) {
         PROTOCOL *protocol = static_cast<PROTOCOL *>(parameter);
         for (;;) {
             if (GLOBAL.IOControlInitialized == false) {
@@ -38,8 +40,7 @@ void PROTOCOL::setup() {
             DPRINTLN("Protocol: initialized");
             vTaskDelete(NULL);   // Delete the task after setup
         }
-    },
-        "Protocol setup", 4096, this, DEFAULT_TASK_PRIORITY, NULL, DEFAULT_TASK_CPU);
+    }, "Protocol setup", 4096, this, DEFAULT_TASK_PRIORITY, NULL, DEFAULT_TASK_CPU);
 }
 
 void PROTOCOL::setupSerial() {

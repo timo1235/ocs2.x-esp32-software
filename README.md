@@ -40,6 +40,9 @@ Then the WiFi hotspot should start and the wire can be disconnected again.
 # Changelog
 
 ## latest
+## 1.1.2
+- Improved connection check to I2C und SPI chips
+  - restore connection periodically if it was lost
 
 ## 1.1.1
 - Added PCB version 1.2 for OCS2 mini

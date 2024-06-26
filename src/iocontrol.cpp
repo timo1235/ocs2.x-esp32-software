@@ -16,6 +16,9 @@ bool ioPort2Flag = false;
 
 bool functionButtonPressedFlag = false;
 
+// Semaphore to control access
+SemaphoreHandle_t BU2560_Semaphore = NULL;
+
 void IRAM_ATTR readIOPort1() { ioPort1Flag = true; }
 void IRAM_ATTR readIOPort2() { ioPort2Flag = true; }
 
@@ -26,6 +29,10 @@ void IOCONTROL::setup() {
         DPRINTLN("IOControl: Board type is undefined. Functionalities are disabled.");
         return;
     }
+    // Create semaphore for BU2560
+    BU2560_Semaphore = xSemaphoreCreateBinary();
+    xSemaphoreGive(BU2560_Semaphore);
+
     ioPortTaskHandle = NULL;
 
     pinMode(LED_BUILTIN, OUTPUT);
@@ -40,14 +47,18 @@ void IOCONTROL::setup() {
         this->disableDACOutputs();
     }
 
-    this->checkPCA9555();
+    this->initPCA9555();
 
     if (mainConfig.controlHandWheelFunctions) {
         this->enableDACOutputs();
-        // DAC
-        dac.begin(BU2506_LD_PIN);
-        dac.resetOutputs();
-        resetJoySticksToDefaults();
+        this->initBU2560();
+        DATA_TO_CONTROL data = {.joystickX = DAC_JOYSTICK_RESET_VALUE,
+                                .joystickY = DAC_JOYSTICK_RESET_VALUE,
+                                .joystickZ = DAC_JOYSTICK_RESET_VALUE,
+                                .feedrate = 0,
+                                .rotationSpeed = 0,
+                                .command = {.setJoystick = true, .setFeedrate = true, .setRotationSpeed = true}};
+        this->writeDACOutputs(&data);
     }
 
     tempSensors.begin();
@@ -57,23 +68,18 @@ void IOCONTROL::setup() {
     pinMode(FUNCTION_BUTTON_PIN, INPUT_PULLUP);
 
     // Interrupt for function button - starting the wifi webinterface
-    attachInterrupt(
-        FUNCTION_BUTTON_PIN,
-        []() {
+    attachInterrupt(FUNCTION_BUTTON_PIN, []() {
         if (functionButtonPressedFlag == true) {
             return;
         }
         functionButtonPressedFlag = true;
-        xTaskCreate(
-            [](void *parameter) {
+        xTaskCreate([](void *parameter) {
             if (!GLOBAL.configManagerWiFiInitialized) {
                 configManager.startWiFi();
             }
             vTaskDelete(NULL);
-        },
-            "IOControl: Function Button", 2048, nullptr, DEFAULT_TASK_PRIORITY, NULL);
-    },
-        FALLING);
+        }, "IOControl: Function Button", 2048, nullptr, DEFAULT_TASK_PRIORITY, NULL);
+    }, FALLING);
 
     // Create a task for the iocontrol
     xTaskCreatePinnedToCore(IOCONTROL::ioControlTask, /* Task function. */
@@ -100,12 +106,12 @@ void IOCONTROL::setup() {
                             NULL,                  /* Task handle to keep track of created task */
                             TASK_IOCONTROL_CPU);
     // Create a task for reading the PCA9555 inputs
-    xTaskCreatePinnedToCore(IOCONTROL::ioPortCheckTask, /* Task function. */
-                            "IO Task",                  /* name of task. */
-                            2048,                       /* Stack size of task*/
-                            this,                       /* parameter of the task */
-                            DEFAULT_TASK_PRIORITY,      /* priority of the task */
-                            NULL,                       /* Task handle to keep track of created task */
+    xTaskCreatePinnedToCore(IOCONTROL::checkChipsConnection, /* Task function. */
+                            "IO Task",                       /* name of task. */
+                            4096,                            /* Stack size of task*/
+                            this,                            /* parameter of the task */
+                            DEFAULT_TASK_PRIORITY,           /* priority of the task */
+                            NULL,                            /* Task handle to keep track of created task */
                             TASK_IOCONTROL_CPU);
 }
 
@@ -114,8 +120,7 @@ void IOCONTROL::checkPCA9555() {
         return;
     }
 
-    xTaskCreatePinnedToCore(
-        [](void *parameter) {
+    xTaskCreatePinnedToCore([](void *parameter) {
         IOCONTROL *ioControl = static_cast<IOCONTROL *>(parameter);
         for (;;) {
             bool io1Success = false;
@@ -134,8 +139,8 @@ void IOCONTROL::checkPCA9555() {
             }
 
             while (!io1Success || !io2Success) {
-                io1Success = ioport1.begin(i2c_sda, i2c_scl);
-                io2Success = ioport2.begin(i2c_sda, i2c_scl);
+                io1Success = ioport1.isConnected();
+                io2Success = ioport2.isConnected();
 
                 if (!io1Success && !io1PreviouslyFailed) {
                     DPRINTLN("IOControl: PCA9555_1 not found!!");
@@ -168,8 +173,7 @@ void IOCONTROL::checkPCA9555() {
             ioControl->ioPortTaskHandle = NULL;
             vTaskDelete(NULL);
         }
-    },
-        "Check PCA9555 Chips", 2048, this, DEFAULT_TASK_PRIORITY, &ioPortTaskHandle, DEFAULT_TASK_CPU);
+    }, "Check PCA9555 Chips", 2048, this, DEFAULT_TASK_PRIORITY, &ioPortTaskHandle, DEFAULT_TASK_CPU);
 }
 
 void IOCONTROL::initDirPins() {
@@ -200,8 +204,32 @@ void IOCONTROL::freeDirPins() {
     ioport1.pinMode(IO1_DIRC, INPUT);
 }
 
+void IOCONTROL::initBU2560() {
+    if (xSemaphoreTake(BU2560_Semaphore, (TickType_t) 50) == pdTRUE) {
+        dac.begin(BU2506_LD_PIN);
+        xSemaphoreGive(BU2560_Semaphore);
+    }
+}
+
 void IOCONTROL::initPCA9555() {
-    // Set output pin modes for IO Expander 1
+    byte i2c_sda, i2c_scl;
+    bool io1Success, io2Success;
+
+    if (versionManager.isBoardType(BOARD_TYPE::OCS2) && (versionManager.isVersion(2, 4) || versionManager.isVersion(2, 5))) {
+        i2c_sda = I2C_BUS_SDA_OLD;
+        i2c_scl = I2C_BUS_SCL_OLD;
+    } else {
+        i2c_sda = I2C_BUS_SDA;
+        i2c_scl = I2C_BUS_SCL;
+    }
+
+    io1Success = ioport1.begin(i2c_sda, i2c_scl);
+    io2Success = ioport2.begin(i2c_sda, i2c_scl);
+
+    if (!io1Success || !io2Success) {
+        this->IOInitialized = false;
+        return;
+    }
 
     if (versionManager.isBoardType(BOARD_TYPE::OCS2) && versionManager.isVersion(2, 12)) {
         // OCS2 Version 12 have DIR pins directly connected to the controller DIR pins
@@ -291,12 +319,15 @@ void IOCONTROL::initPCA9555() {
 
 void IOCONTROL::loop() {}
 
-void IOCONTROL::ioPortCheckTask(void *pvParameters) {
+void IOCONTROL::checkChipsConnection(void *pvParameters) {
     auto *ioControl = (IOCONTROL *) pvParameters;
     for (;;) {
         ioControl->checkPCA9555();
+        if (mainConfig.controlHandWheelFunctions) {
+            ioControl->initBU2560();
+        }
 
-        vTaskDelay(1000);
+        vTaskDelay(CHECK_CHIPS_INTERVAL_MS);
     }
 }
 
@@ -308,9 +339,10 @@ void IOCONTROL::writeOutputsTask(void *pvParameters) {
             continue;
         }
 
-        ioControl->writeDataBag(&dataToControl);
+        ioControl->writeIOPortOutputs(&dataToControl);
+        ioControl->writeDACOutputs(&dataToControl);
 
-        vTaskDelay(WRITE_OUPUTS_INTERVAL);
+        vTaskDelay(WRITE_OUPUTS_INTERVAL_MS);
     }
 }
 
@@ -489,24 +521,13 @@ void IOCONTROL::dacSetAllChannel(int value) {
 void IOCONTROL::setFeedrate(int value) { dac.analogWrite(value, DAC_FEEDRATE); }
 void IOCONTROL::setRotationSpeed(int value) { dac.analogWrite(value, DAC_ROTATION_SPEED); }
 
-void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data) {
+void IOCONTROL::writeIOPortOutputs(DATA_TO_CONTROL *data) {
     // Stop if the io is not initialized - mostly means, the mainboard has no power or is not connected
     if (!this->IOInitialized) {
         return;
     }
 
     if (mainConfig.controlHandWheelFunctions) {
-        if (data->command.setJoystick) {
-            dac.analogWrite(data->joystickX, DAC_JOYSTICK_X);
-            dac.analogWrite(data->joystickY, DAC_JOYSTICK_Y);
-            dac.analogWrite(data->joystickZ, DAC_JOYSTICK_Z);
-        }
-        if (data->command.setFeedrate) {
-            dac.analogWrite(data->feedrate, DAC_FEEDRATE);
-        }
-        if (data->command.setRotationSpeed) {
-            dac.analogWrite(data->rotationSpeed, DAC_ROTATION_SPEED);
-        }
         if (data->command.setAxisSelect) {
             setAuswahlX(data->selectAxisX);
             setAuswahlY(data->selectAxisY);
@@ -542,6 +563,25 @@ void IOCONTROL::writeDataBag(DATA_TO_CONTROL *data) {
     }
     if (data->command.setOutput4) {
         setOut4(data->output4);
+    }
+}
+
+void IOCONTROL::writeDACOutputs(DATA_TO_CONTROL *data) {
+    if (xSemaphoreTake(BU2560_Semaphore, (TickType_t) 5) == pdTRUE) {
+        if (mainConfig.controlHandWheelFunctions) {
+            if (data->command.setJoystick) {
+                dac.analogWrite(data->joystickX, DAC_JOYSTICK_X);
+                dac.analogWrite(data->joystickY, DAC_JOYSTICK_Y);
+                dac.analogWrite(data->joystickZ, DAC_JOYSTICK_Z);
+            }
+            if (data->command.setFeedrate) {
+                dac.analogWrite(data->feedrate, DAC_FEEDRATE);
+            }
+            if (data->command.setRotationSpeed) {
+                dac.analogWrite(data->rotationSpeed, DAC_ROTATION_SPEED);
+            }
+        }
+        xSemaphoreGive(BU2560_Semaphore);
     }
 }
 

@@ -15,7 +15,8 @@
 #define TEMPERATURE_READ_INTERVAL_MS 10000
 #define CLIENT_DATA_UPDATE_INTERVAL_MS 5
 
-#define WRITE_OUPUTS_INTERVAL 20
+#define WRITE_OUPUTS_INTERVAL_MS 20
+#define CHECK_CHIPS_INTERVAL_MS 100
 
 // DAC channel map
 #define DAC_JOYSTICK_X 3
@@ -65,6 +66,7 @@ class IOCONTROL {
     IOCONTROL();
     void setup();
     void initPCA9555();
+    void initBU2560();
     void initDirPins();
     void freeDirPins();
     void loop();
@@ -114,7 +116,8 @@ class IOCONTROL {
     void setRotationSpeed(int value);
 
     // general
-    void writeDataBag(DATA_TO_CONTROL *data);
+    void writeIOPortOutputs(DATA_TO_CONTROL *data);
+    void writeDACOutputs(DATA_TO_CONTROL *data);
 
     void startBlinkRJ45LED();
     void stopBlinkRJ45LED();
@@ -137,7 +140,7 @@ class IOCONTROL {
     // Task handler
     static void ioControlTask(void *pvParameters);
     static void ioPortTask(void *pvParameters);
-    static void ioPortCheckTask(void *pvParameters);
+    static void checkChipsConnection(void *pvParameters);
     static void writeOutputsTask(void *pvParameters);
 
     // Temp sensors
