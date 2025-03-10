@@ -1,0 +1,92 @@
+2.8.7
+  * Added connection failover
+  * Fixed callback with no async connection
+  * Fix start storage called once
+
+2.8.6 (2024-12-02)
+  * Added WiFi async connection with WiFiResultCallback. Added example
+  * Check connection and auto reconnect on failure
+  * Added forced and async time synchronization
+
+2.8.5 (2024-11-20)
+  * Added force time synchronization.
+  * Added read operator () and asign [] operators
+
+2.8.4 (2024-10-19)
+  * Load default dictionary only when setup AP
+  * Fixed retain connections
+
+2.8.3 (2024-04-23)
+  * Generate config files on first run with default values.
+  * Stream html controls to handle big text areas.
+
+2.8.2 (2024-02-14)
+  * Added attributes to variables (javascript, style, etc.).
+  * Added a function to append a javascript to main page
+
+2.8.1 (2024-02-01)
+  * Removed regex to reduce size.
+
+2.8.0 (2024-01-25)
+  * Added accordion open/closed button. Fixed errors
+
+2.7.9 (2024-01-12)
+  * Removed Json. Fixed yaml errors
+
+2.7.8 (2024-01-04)
+  * Moved to yaml for definitions.
+
+2.7.7 (2023-12-21)
+  * Added callback function on portal updates.
+
+2.7.6 (2023-12-15)
+  * Added ntp time synchronization
+
+2.7.5 (2023-11-07)
+  * Added didplay types for seperators. Fixed errors.
+
+2.7.3 (2023-10-24)
+  * Added headers inside class
+
+2.7.2 (2023-10-15)
+  * Firmware updates over the internet.
+
+2.7.1 (2023-10-10)
+  * Dump to web server
+
+2.7.0 (2023-10-10)
+  * Enable saving wifi credentials to nvs
+
+2.6.9 (2023-10-10)
+  * Changed constructors, Improved log functions. Hide passwords in browser.
+
+2.6.8 (2023-10-5)
+  * Disable wifi-scan.time-sync,ota-update to save getMessageHtml
+
+2.6.7 (2023-09-29)
+  * Support OTA firmware updates with progress bar
+
+2.6.6 (2023-09-09)
+  * Backup and restore configuration
+
+2.6.5 (2023-07-19)
+  * Added set static ip to ConfigAssist-Test-Wifi.ino
+  * Add a not found key to ini file if defined in json.
+
+2.6.4 (2023-07-08)
+  * Reboot confirmation using timestamp
+
+2.6.3 (2023-06-21)
+  * Test multiple station network connections from AP portal and show ip and signal strength
+    after connection
+
+2.6.2 (2023-05-15)
+  * Allow application to logging into a file with logLevel
+
+2.6.1 (2023-05-11)
+  * Added function getCSS() to get ConfigAssist css on application main page
+  * Added function getTimeSyncScript() to get ConfigAssist time sync script
+  * Added function getMessageHtml() to get ConfigAssist simple message page
+
+2.6.0 (2023-05-10)
+  * Created ConfigAssist library
