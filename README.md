@@ -40,6 +40,9 @@ Then the WiFi hotspot should start and the wire can be disconnected again.
 # Changelog
 
 ## latest
+## 1.1.4
+- Fix max config entries value
+
 ## 1.1.3
 - Added support for OCS2 Mini v1.3
 - Bumped dependencies
