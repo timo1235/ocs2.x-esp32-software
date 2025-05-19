@@ -10,11 +10,11 @@ General Configuration:
       options: '1.2', '1.3', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '2.8', '2.9', '2.10', '2.11', '2.12', '2.13'
       default: 2.0
   - enable_WiFi:
-      label: <strong>Enable WiFi Hotspot</strong>
-        Enables/disables the WiFi hotspot. If disabled, the ESP32 will not start the WiFi hotspot after booting.
-        To manually start the WiFi hotspot, press the function button on the OCS2_Mini or 
+      label: <strong>Enable WiFi</strong>
+        Enables/disables the WiFi interface. If disabled, the ESP32 will not start the WiFi interface after booting.
+        To manually start the WiFi interface, press the function button on the OCS2_Mini or
         <a href="https://docs.timos-werkstatt.de/open-cnc-shield-2/mainboard/anschluesse-jumper#esp32-pinout">ESP32_D34 on the ESP32 Pinout for the OCS2</a>
-        If the configuration is finished, I recommend to disable the WiFi hotspot. That saves performance and you dont have an unnecessary WiFi network.
+        If the configuration is finished, I recommend to disable the WiFi interface. That saves performance and you dont have an unnecessary WiFi network.
       checked: True
 Handwheel / ESP32 Panel:
   - Wireless_ID:
@@ -248,6 +248,16 @@ Autosquare Axis 3:
       label: <strong>Reverse Motor Direction</strong>
         Reverse the motor direction for the autosquaring sequence.
       checked: False
+WiFi settings:
+  - WiFi_SSID:
+      label: SSID for Wifi
+      default:
+  - WiFi_Pass:
+      label: Password for Wifi
+      default:
+  - WiFi_Hostname:
+      label: Host name to use for MDNS and AP
+      default: OCS2
 )~";   // VARIABLES_DEF_YAML
 
 // - debug_output:

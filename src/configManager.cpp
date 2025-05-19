@@ -26,7 +26,9 @@ OCS2_CONFIG mainConfig = {{BOARD_TYPE::undefined, 0, 0},   // VersionInfo
                               {false, AXIS::y, 3, true, AS_STATES::none, 10, AXIS::b, 4, true, AS_STATES::none, 10, 1600, 32, 20, false},   // 2.
                               {false, AXIS::z, 5, true, AS_STATES::none, 10, AXIS::c, 6, true, AS_STATES::none, 10, 1600, 32, 20, false}    // 3.
                           },
-                          true};   // ENABLE_WEB_INTERFACE
+                          true,                            // ENABLE_WEB_INTERFACE
+                          { "", "", "OSC2"}
+                          };
 
 bool CONFIGMANAGER::startConfigHotspot = false;
 
@@ -98,6 +100,12 @@ void CONFIGMANAGER::setup() {
     mainConfig.autosquareConfig[2].mmPerRevolution = conf["axis_3_mm_per_revolution"].toInt();
     mainConfig.autosquareConfig[2].asSpeed_mm_s = conf["axis_3_as_speed"].toInt();
     mainConfig.autosquareConfig[2].reverseMotorDirection = conf["axis_3_reverse_motor_direction"].toInt();
+    mainConfig.wifiConfig.ssid = conf["WiFi_SSID"];
+    mainConfig.wifiConfig.pass = conf["WiFi_Pass"];
+    
+    if (!conf["WiFi_Hostname"].isEmpty()) {
+        mainConfig.wifiConfig.hostname = conf["WiFi_Hostname"].c_str();
+    }
 
     printMainConfig();
     if (!mainConfig.enableWebInterface) {
@@ -128,15 +136,12 @@ void CONFIGMANAGER::startWiFi() {
                 }
             }
 
-            if (WiFi.getMode() != WIFI_AP_STA) {
-                WiFi.mode(WIFI_AP_STA);
+            if (mainConfig.wifiConfig.ssid.isEmpty()) {
+                configManager->setupWiFiAP();
+            } else {
+                configManager->setupWiFiConnect();
             }
 
-#if defined(WIFI_SSID) && defined(WIFI_PASS)
-            configManager->setupWiFiConnect();
-#else
-            configManager->setupWiFiAP();
-#endif
             server.on("/", [configManager]() {
                 server.sendHeader("Location", "/cfg", true);
                 server.send(302, "text/plain", "");
@@ -159,7 +164,11 @@ void CONFIGMANAGER::startWiFi() {
 }
 
 void CONFIGMANAGER::setupWiFiAP() {
-    WiFi.setHostname("OCS2");
+    if (WiFi.getMode() != WIFI_AP_STA) {
+        WiFi.mode(WIFI_AP_STA);
+    }
+
+    WiFi.setHostname(mainConfig.wifiConfig.hostname);
     Serial.println("Creating hotspot");
     delay(100);
     IPAddress apIP(192, 168, 4, 1);
@@ -179,7 +188,10 @@ void CONFIGMANAGER::setupWiFiAP() {
 }
 
 void CONFIGMANAGER::setupWiFiConnect() {
-    WiFi.begin("asdf", "1234567890");
+    WiFi.mode(WIFI_STA);
+    WiFi.setHostname(mainConfig.wifiConfig.hostname);
+    WiFi.begin(mainConfig.wifiConfig.ssid, mainConfig.wifiConfig.pass);
+
     Serial.println("\nConnecting");
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -187,7 +199,7 @@ void CONFIGMANAGER::setupWiFiConnect() {
         delay(100);
     }
 
-    if (MDNS.begin("esp32")) {
+    if (MDNS.begin(mainConfig.wifiConfig.hostname)) {
         Serial.println("MDNS responder started");
     }
 
@@ -284,4 +296,9 @@ void CONFIGMANAGER::printMainConfig() {
     DPRINTLN("mm per Revolution: \t\t" + String(mainConfig.autosquareConfig[2].mmPerRevolution));
     DPRINTLN("AS Speed: \t\t\t" + String(mainConfig.autosquareConfig[2].asSpeed_mm_s));
     DPRINTLN("Reverse Motor Direction: \t" + String(mainConfig.autosquareConfig[2].reverseMotorDirection));
+    DPRINTLN("------------------------------------");
+    DPRINTLN("WiFi Configuration: ");
+    DPRINTLN("SSID: \t\t\t" + mainConfig.wifiConfig.ssid);
+    DPRINTLN("Password: \t\t\t" + mainConfig.wifiConfig.pass);
+    DPRINTLN("Hostname: \t\t\t" + String(mainConfig.wifiConfig.hostname));
 }
