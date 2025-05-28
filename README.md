@@ -40,6 +40,9 @@ Then the WiFi hotspot should start and the wire can be disconnected again.
 # Changelog
 
 ## latest
+## 1.1.5
+- Added possibility to connect to a wifi network in station mode. Credentials can be configured in the webinterface. Take a look in your router for the IP of the esp32. Alternatively use the Serial Monitor and look out for the esp32 ip.
+
 ## 1.1.4
 - Fix max config entries value
 
