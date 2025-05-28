@@ -8,6 +8,12 @@
 #define INI_FILE "/OCS2Config.ini"      // Define SPIFFS storage file
 
 typedef struct {
+    String ssid;
+    String pass;
+    const char* hostname;
+} WIFI_CONFIG;
+
+typedef struct {
     VERSION_INFO versionInfo;
     bool controlHandWheelFunctions;           // ESP_HANDWHEEL
     bool controlDriverEnable;                 // ESP_SET_ENA
@@ -21,7 +27,8 @@ typedef struct {
     int autosquareButtonPressTime;            // AUTOSQUARE_BUTTON_PRESS_TIME_MS
     int stepperAcceleration;                  // STEPPER_ACCELERATION
     AUTOSQUARE_CONFIG autosquareConfig[3];
-    bool enableWebInterface;   // ENABLE_WEB_INTERFACE
+    bool enableWebInterface;                  // ENABLE_WEB_INTERFACE
+    WIFI_CONFIG wifiConfig;
 } OCS2_CONFIG;
 
 extern OCS2_CONFIG mainConfig;
