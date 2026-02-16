@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ImprovWiFiLibrary.h>
 #include <steppercontrol.h>
 #include <versionManager.h>
 
@@ -32,6 +33,7 @@ typedef struct {
 } OCS2_CONFIG;
 
 extern OCS2_CONFIG mainConfig;
+extern ConfigAssist conf;
 
 class CONFIGMANAGER {
   public:
@@ -45,10 +47,13 @@ class CONFIGMANAGER {
     void startWiFi();
 
   private:
+    ImprovWiFi *_improv = nullptr;
+
     void handleRoot();
     void handleNotFound();
     void setupWiFiAP();
     void setupWiFiConnect();
+    void setupImprov();
 };
 
 extern CONFIGMANAGER configManager;

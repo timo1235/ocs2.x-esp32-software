@@ -1,11 +1,12 @@
 {
-    "name": "OCS2 ESP32 Fimware",
+    "name": "OCS2 ESP32 Firmware",
     "version": "latest",
     "new_install_prompt_erase": false,
+    "new_install_improv_wait_time": 15,
     "builds": [
         {
             "chipFamily": "ESP32",
-            "improv": false,
+            "improv": true,
             "parts": [
                 {
                     "path": "firmware/ocs2_esp32_latest.bin",

@@ -108,6 +108,7 @@ void CONFIGMANAGER::setup() {
     }
 
     printMainConfig();
+    setupImprov();
     if (!mainConfig.enableWebInterface) {
         return;
     }
@@ -116,10 +117,46 @@ void CONFIGMANAGER::setup() {
 }
 
 void CONFIGMANAGER::loop() {
+    if (_improv) {
+        _improv->handleSerial();
+    }
     if (GLOBAL.configManagerWiFiInitialized) {
         server.handleClient();
         delay(2);
     }
+}
+
+void CONFIGMANAGER::setupImprov() {
+    static ImprovWiFi improvSerial(&Serial);
+    _improv = &improvSerial;
+    improvSerial.setDeviceInfo(
+        ImprovTypes::ChipFamily::CF_ESP32,
+        "OCS2-Firmware",
+        FIRMWARE_VERSION,
+        "OCS2-ESP32",
+        "http://{LOCAL_IPV4}/cfg"
+    );
+
+    improvSerial.setCustomConnectWiFi([](const char *ssid, const char *password) -> bool {
+        WiFi.mode(WIFI_AP_STA);
+        WiFi.begin(ssid, password);
+
+        int attempts = 0;
+        while (WiFi.status() != WL_CONNECTED && attempts < 100) {
+            delay(100);
+            attempts++;
+        }
+        return WiFi.status() == WL_CONNECTED;
+    });
+
+    improvSerial.onImprovConnected([](const char *ssid, const char *password) {
+        conf.put("WiFi_SSID", String(ssid));
+        conf.put("WiFi_Pass", String(password));
+        conf.saveConfigFile();
+        DPRINTLN("Improv: WiFi credentials saved to config");
+    });
+
+    DPRINTLN("Improv WiFi Serial initialized");
 }
 
 void CONFIGMANAGER::startWiFi() {
@@ -136,7 +173,13 @@ void CONFIGMANAGER::startWiFi() {
                 }
             }
 
-            if (mainConfig.wifiConfig.ssid.isEmpty()) {
+            // Check if WiFi was already connected via Improv Serial
+            if (WiFi.status() == WL_CONNECTED) {
+                DPRINTLN("ConfigManager: WiFi already connected (via Improv)");
+                if (MDNS.begin(mainConfig.wifiConfig.hostname)) {
+                    DPRINTLN("MDNS responder started");
+                }
+            } else if (mainConfig.wifiConfig.ssid.isEmpty()) {
                 configManager->setupWiFiAP();
             } else {
                 configManager->setupWiFiConnect();

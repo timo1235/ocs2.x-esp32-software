@@ -1,218 +1,366 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
-    <title>OCS2-ESP32 installer</title>
-    <meta name="description" content="Easily allow users to install OPEN-CNC-Shield 2 firmware on the web." />
-    <meta name="viewport" content="width=device-width" />
+    <title>OCS2-ESP32 Firmware Installer</title>
+    <meta name="description" content="Install and configure OPEN-CNC-Shield 2 firmware directly from the browser." />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
     <style>
         body {
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI",
                 Roboto, Ubuntu, sans-serif;
             padding: 0;
             margin: 0;
-            line-height: 1.4;
+            line-height: 1.6;
         }
 
         .content {
             max-width: 800px;
             margin: 0 auto;
-            padding: 12px;
-        }
-
-        h2 {
-            margin-top: 2em;
-        }
-
-        h3 {
-            margin-top: 1.5em;
+            padding: 16px;
         }
 
         a {
             color: #03a9f4;
         }
 
-        .invisible {
-            visibility: hidden;
+        .step-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            background: #fff;
         }
 
-        .hidden {
-            display: none;
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .step-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .install-btn-wrapper {
+            text-align: center;
+            padding: 16px 0;
         }
 
         esp-web-install-button[install-unsupported] {
             visibility: inherit;
         }
 
-        .content pre {
-            max-width: 100%;
-            overflow-y: scroll;
-        }
-
         .footer {
-            margin-top: 24px;
-            border-top: 1px solid #ccc;
-            padding-top: 24px;
+            margin-top: 32px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 16px;
             text-align: center;
-        }
-
-        .footer .initiative {
-            font-style: italic;
-            margin-top: 16px;
+            font-size: 0.9rem;
+            color: #6c757d;
         }
 
         @media (prefers-color-scheme: dark) {
             body {
-                background-color: #333;
-                color: #fff;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
             }
 
             a {
                 color: #58a6ff;
             }
+
+            .step-card {
+                background: #16213e;
+                border-color: #2a2a4a;
+            }
+
+            .footer {
+                border-color: #2a2a4a;
+                color: #999;
+            }
         }
     </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 
 <body>
     <div class="content">
-        <h2>OPEN-CNC-Shield 2 ESP32 Firmware installer</h2>
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <h2 class="mb-3">OPEN-CNC-Shield 2 ESP32 Firmware Installer</h2>
+
+        <ul class="nav nav-tabs mb-4" id="langTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#english-tab-pane"
-                    type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">English</button>
+                <button class="nav-link active" id="en-tab" data-bs-toggle="tab" data-bs-target="#en-pane"
+                    type="button" role="tab" aria-controls="en-pane" aria-selected="true">English</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#german-tab-pane"
-                    type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">Deutsch</button>
+                <button class="nav-link" id="de-tab" data-bs-toggle="tab" data-bs-target="#de-pane"
+                    type="button" role="tab" aria-controls="de-pane" aria-selected="false">Deutsch</button>
             </li>
         </ul>
-        <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="english-tab-pane" role="tabpanel" aria-labelledby="home-tab"
-                tabindex="0">
-                <p class="lead">The installer can be used to install the OCS2 firmware to an ESP32 without the need of
-                    an IDE or
-                    compiling
-                    the source code. Just connect the ESP32 with the computer and click on "Connect".</p>
 
-                <h3>Requirements</h3>
-                <ul>
-                    <li>
-                        <a href="https://shop.altholtmann.com/OPEN-CNC-Shield-2-Mainboard/SW10017">OPEN-CNC-Shield 2
-                            with
-                            ESP32</a>
-                        or OPEN-CNC-Shield 2 Mini(ESP32 integrated)
-                    </li>
-                    <li><strong>Google Chrome Browser </strong>- others might also work with WebSerial</li>
-                    <li>Maybe driver for your PC -> google for ESP32 driver and install them</li>
-                </ul>
+        <div class="tab-content" id="langTabContent">
 
-                <h3>First Step</h3>
-                <p>Connect the ESP32 to your computer and click on the "Connect" button below. Choose the serial port of
-                    the
-                    ESP32 and then install the firmware</p>
-                <div class="alert alert-info" role="alert">
-                    If the ESP32 is not recognized, you may need to install the driver for the ESP32. Google for "ESP32
-                    driver"
-                    and install it.
+            <!-- ==================== ENGLISH ==================== -->
+            <div class="tab-pane fade show active" id="en-pane" role="tabpanel" aria-labelledby="en-tab" tabindex="0">
+                <p class="lead">Install the OCS2 firmware directly from your browser &mdash; no IDE or compiling needed.</p>
+
+                <!-- Requirements -->
+                <div class="alert alert-light border" role="alert">
+                    <strong>Requirements:</strong>
+                    <a href="https://shop.altholtmann.com/OPEN-CNC-Shield-2-Mainboard/SW10017">OPEN-CNC-Shield 2</a>
+                    with ESP32 (or OCS2 Mini) &bull;
+                    <strong>Google Chrome</strong> or Microsoft Edge &bull;
+                    USB cable &bull;
+                    ESP32 driver (if not recognized &mdash; search for "CP2102 driver" or "CH340 driver")
                 </div>
 
-                <p class="button-row" align="center">
-                    <esp-web-install-button id="installButton" manifest="./manifest_ocs2.json"></esp-web-install-button>
-                </p>
-
-                <h3>Connect to the ESP32</h3>
-                <p>After the firmware installation, the ESP32 will be configured as an access point called "OCS2-XXXXX".
-                </p>
-                <p>Connect to the
-                    access point with
-                    your computer or smartphone and open this link in the broswer: <a
-                        href="https://192.168.4.1">https://192.168.4.1</a>. You should see the configuration
-                    webinterface.</p>
-                <div class="alert alert-warning" role="alert">
-                    If a <strong>mobile phone</strong> is used make sure that the mobile data is disabled and the WLAN
-                    is
-                    connected to the right network. Mobile phones can be picky about the network if the dont have
-                    internet
-                    access.
+                <!-- Step 1: Flash -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3>Flash Firmware</h3>
+                    </div>
+                    <p>Connect the ESP32 to your computer via USB and click the button below.
+                        Select the serial port of your ESP32 and install the firmware.</p>
+                    <div class="install-btn-wrapper">
+                        <esp-web-install-button manifest="./manifest_ocs2.json"></esp-web-install-button>
+                    </div>
+                    <div class="alert alert-info mb-0" role="alert">
+                        <strong>ESP32 not recognized?</strong> You may need to install a USB driver.
+                        Search for "CP2102 driver" or "CH340 driver" and install it.
+                    </div>
                 </div>
 
-                <h3>Configure using the Webinterface</h3>
-                <p>Configure the ESP32 with the settings you need and click on "Reboot". The ESP32 will restart the
-                    settings
-                    will be active</p>
-                <div class="alert alert-warning" role="alert">
-                    The settings will only be effective after a reboot.
+                <!-- Step 2: WiFi Setup via Improv -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3>Configure WiFi</h3>
+                    </div>
+                    <p>After flashing, a <strong>WiFi setup dialog</strong> will appear automatically in your browser.
+                        Enter your WiFi network name (SSID) and password. The ESP32 will connect to your home network.</p>
+                    <div class="alert alert-success mb-0" role="alert">
+                        <strong>No hotspot switching needed!</strong> The WiFi configuration happens directly through the USB connection.
+                        You can also select from a list of available WiFi networks.
+                    </div>
                 </div>
-                <img src="assets/webinterface_crop.png" class="img-fluid border border-primary border-2"
-                    alt="Webinterface">
+
+                <!-- Step 3: Configure -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h3>Configure Settings</h3>
+                    </div>
+                    <p>After WiFi setup, you will see a <strong>link to the configuration page</strong>.
+                        Click it to open the OCS2 web interface where you can configure all settings
+                        (PCB type, autosquare, handwheel, etc.).</p>
+                    <p>After changing settings, click <strong>"Reboot"</strong> in the web interface to apply them.</p>
+                    <img src="assets/webinterface_crop.png" class="img-fluid border rounded mt-2" alt="OCS2 Web Interface">
+                </div>
+
+                <!-- Fallback: Hotspot -->
+                <div class="accordion mb-3" id="fallbackAccordionEn">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#fallbackEn">
+                                Alternative: Manual WiFi Hotspot Setup
+                            </button>
+                        </h2>
+                        <div id="fallbackEn" class="accordion-collapse collapse" data-bs-parent="#fallbackAccordionEn">
+                            <div class="accordion-body">
+                                <p>If the automatic WiFi dialog does not appear (e.g., older firmware or unsupported browser),
+                                    you can configure the ESP32 manually:</p>
+                                <ol>
+                                    <li>After flashing, the ESP32 creates a WiFi hotspot called <strong>"OCS2-XXXXX"</strong></li>
+                                    <li>Connect your computer or phone to this hotspot</li>
+                                    <li>Open <a href="http://192.168.4.1">http://192.168.4.1</a> in your browser</li>
+                                    <li>Configure WiFi and all other settings in the web interface</li>
+                                    <li>Click "Reboot" to apply</li>
+                                </ol>
+                                <div class="alert alert-warning mb-0">
+                                    <strong>Mobile phone tip:</strong> Disable mobile data and make sure your phone stays
+                                    connected to the OCS2 hotspot. Phones may disconnect if there is no internet access.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="accordion mb-3" id="troubleshootAccordionEn">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#troubleshootEn">
+                                Troubleshooting
+                            </button>
+                        </h2>
+                        <div id="troubleshootEn" class="accordion-collapse collapse"
+                            data-bs-parent="#troubleshootAccordionEn">
+                            <div class="accordion-body">
+                                <dl>
+                                    <dt>ESP32 is not detected by the browser</dt>
+                                    <dd>Install the USB driver for your ESP32 (CP2102 or CH340). Make sure you use a data-capable USB cable (not charge-only).</dd>
+                                    <dt>WiFi dialog does not appear after flashing</dt>
+                                    <dd>Wait up to 15 seconds for the ESP32 to boot. If it still does not appear, use the manual hotspot method described above.</dd>
+                                    <dt>"Connect" button is not visible</dt>
+                                    <dd>Your browser does not support WebSerial. Please use <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> on a desktop computer.</dd>
+                                    <dt>ESP32 does not connect to WiFi</dt>
+                                    <dd>Check that the SSID and password are correct. The ESP32 supports 2.4 GHz WiFi networks only (not 5 GHz).</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="tab-pane fade" id="german-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-                <p class="lead">Der Installer kann verwendet werden, um die OCS2-Firmware auf einem ESP32 zu
-                    installieren, ohne dass eine IDE oder das Kompilieren des Quellcodes benötigt wird. Verbinden Sie
-                    einfach den ESP32 mit dem Computer und klicken Sie auf "Verbinden".</p>
 
-                <h3>Voraussetzungen</h3>
-                <ul>
-                    <li>
-                        <a href="https://shop.altholtmann.com/OPEN-CNC-Shield-2-Mainboard/SW10017">OPEN-CNC-Shield 2
-                            mit
-                            ESP32</a>
-                        oder OPEN-CNC-Shield 2 Mini (ESP32 integriert)
-                    </li>
-                    <li><strong>Google Chrome Browser</strong> - andere könnten auch mit WebSerial funktionieren</li>
-                    <li>Vielleicht Treiber für Ihren PC -> suchen Sie nach ESP32-Treiber und installieren Sie ihn</li>
-                </ul>
+            <!-- ==================== DEUTSCH ==================== -->
+            <div class="tab-pane fade" id="de-pane" role="tabpanel" aria-labelledby="de-tab" tabindex="0">
+                <p class="lead">Installiere die OCS2-Firmware direkt aus dem Browser &mdash; keine IDE oder Kompilierung nötig.</p>
 
-                <h3>Erster Schritt</h3>
-                <p>Verbinden Sie den ESP32 mit Ihrem Computer und klicken Sie auf die Schaltfläche "Verbinden" unten.
-                    Wählen Sie den seriellen Port des ESP32 und installieren Sie dann die Firmware</p>
-                <div class="alert alert-info" role="alert">
-                    Wenn der ESP32 nicht erkannt wird, müssen Sie möglicherweise den Treiber für den ESP32 installieren.
-                    Suchen Sie nach "ESP32-Treiber" und installieren Sie ihn.
+                <!-- Voraussetzungen -->
+                <div class="alert alert-light border" role="alert">
+                    <strong>Voraussetzungen:</strong>
+                    <a href="https://shop.altholtmann.com/OPEN-CNC-Shield-2-Mainboard/SW10017">OPEN-CNC-Shield 2</a>
+                    mit ESP32 (oder OCS2 Mini) &bull;
+                    <strong>Google Chrome</strong> oder Microsoft Edge &bull;
+                    USB-Kabel &bull;
+                    ESP32-Treiber (falls nicht erkannt &mdash; nach "CP2102 Treiber" oder "CH340 Treiber" suchen)
                 </div>
 
-                <p class="button-row" align="center">
-                    <esp-web-install-button id="installButton" manifest="./manifest_ocs2.json"></esp-web-install-button>
-                </p>
-
-                <h3>Verbinden mit dem ESP32</h3>
-                <p>Nach der Firmwareinstallation wird der ESP32 als Zugangspunkt mit dem Namen "OCS2-XXXXX"
-                    konfiguriert.</p>
-                <p>Verbinden Sie sich mit dem Zugangspunkt über Ihren Computer oder Ihr Smartphone und öffnen Sie diesen
-                    Link im Browser: <a href="https://192.168.4.1">https://192.168.4.1</a>. Sie sollten das
-                    Konfigurationswebinterface sehen.</p>
-                <div class="alert alert-warning" role="alert">
-                    Wenn ein <strong>Mobiltelefon</strong> verwendet wird, stellen Sie sicher, dass die mobilen Daten
-                    deaktiviert sind und das WLAN mit dem richtigen Netzwerk verbunden ist. Mobiltelefone können
-                    wählerisch bezüglich des Netzwerks sein, wenn sie keinen Internetzugang haben.
+                <!-- Schritt 1: Flashen -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3>Firmware flashen</h3>
+                    </div>
+                    <p>Verbinde den ESP32 per USB mit deinem Computer und klicke auf den Button unten.
+                        Wähle den seriellen Port des ESP32 und installiere die Firmware.</p>
+                    <div class="install-btn-wrapper">
+                        <esp-web-install-button manifest="./manifest_ocs2.json"></esp-web-install-button>
+                    </div>
+                    <div class="alert alert-info mb-0" role="alert">
+                        <strong>ESP32 wird nicht erkannt?</strong> Möglicherweise muss ein USB-Treiber installiert werden.
+                        Suche nach "CP2102 Treiber" oder "CH340 Treiber" und installiere ihn.
+                    </div>
                 </div>
 
-                <h3>Konfiguration über das Webinterface</h3>
-                <p>Konfigurieren Sie den ESP32 mit den Einstellungen, die Sie benötigen, und klicken Sie auf "Neustart".
-                    Der ESP32 wird neu gestartet und die Einstellungen werden aktiviert</p>
-                <div class="alert alert-warning" role="alert">
-                    Die Einstellungen werden erst nach einem Neustart wirksam.
+                <!-- Schritt 2: WiFi einrichten via Improv -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3>WiFi einrichten</h3>
+                    </div>
+                    <p>Nach dem Flashen erscheint <strong>automatisch ein WiFi-Dialog</strong> im Browser.
+                        Gib den Namen deines WiFi-Netzwerks (SSID) und das Passwort ein.
+                        Der ESP32 verbindet sich mit deinem Heimnetzwerk.</p>
+                    <div class="alert alert-success mb-0" role="alert">
+                        <strong>Kein Hotspot-Wechsel nötig!</strong> Die WiFi-Konfiguration läuft direkt über die USB-Verbindung.
+                        Du kannst auch aus einer Liste verfügbarer WiFi-Netzwerke wählen.
+                    </div>
                 </div>
-                <img src="assets/webinterface_crop.png" class="img-fluid border border-primary border-2"
-                    alt="Webinterface">
+
+                <!-- Schritt 3: Einstellungen -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h3>Einstellungen konfigurieren</h3>
+                    </div>
+                    <p>Nach der WiFi-Einrichtung erscheint ein <strong>Link zur Konfigurationsseite</strong>.
+                        Klicke darauf, um das OCS2-Webinterface zu öffnen. Dort kannst du alle Einstellungen
+                        konfigurieren (PCB-Typ, Autosquare, Handrad, etc.).</p>
+                    <p>Nach dem Ändern der Einstellungen klicke auf <strong>"Reboot"</strong> im Webinterface, um sie zu übernehmen.</p>
+                    <img src="assets/webinterface_crop.png" class="img-fluid border rounded mt-2" alt="OCS2 Webinterface">
+                </div>
+
+                <!-- Fallback: Hotspot -->
+                <div class="accordion mb-3" id="fallbackAccordionDe">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#fallbackDe">
+                                Alternative: Manuelles WiFi-Hotspot-Setup
+                            </button>
+                        </h2>
+                        <div id="fallbackDe" class="accordion-collapse collapse" data-bs-parent="#fallbackAccordionDe">
+                            <div class="accordion-body">
+                                <p>Falls der automatische WiFi-Dialog nicht erscheint (z.B. ältere Firmware oder nicht unterstützter Browser),
+                                    kannst du den ESP32 manuell konfigurieren:</p>
+                                <ol>
+                                    <li>Nach dem Flashen erstellt der ESP32 einen WiFi-Hotspot namens <strong>"OCS2-XXXXX"</strong></li>
+                                    <li>Verbinde deinen Computer oder dein Handy mit diesem Hotspot</li>
+                                    <li>Öffne <a href="http://192.168.4.1">http://192.168.4.1</a> im Browser</li>
+                                    <li>Konfiguriere WiFi und alle anderen Einstellungen im Webinterface</li>
+                                    <li>Klicke auf "Reboot" zum Übernehmen</li>
+                                </ol>
+                                <div class="alert alert-warning mb-0">
+                                    <strong>Handy-Tipp:</strong> Deaktiviere mobile Daten und stelle sicher, dass dein Handy
+                                    mit dem OCS2-Hotspot verbunden bleibt. Handys trennen sich manchmal, wenn kein Internet verfügbar ist.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="accordion mb-3" id="troubleshootAccordionDe">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#troubleshootDe">
+                                Fehlerbehebung
+                            </button>
+                        </h2>
+                        <div id="troubleshootDe" class="accordion-collapse collapse"
+                            data-bs-parent="#troubleshootAccordionDe">
+                            <div class="accordion-body">
+                                <dl>
+                                    <dt>ESP32 wird vom Browser nicht erkannt</dt>
+                                    <dd>Installiere den USB-Treiber für deinen ESP32 (CP2102 oder CH340). Stelle sicher, dass du ein datenfähiges USB-Kabel verwendest (kein reines Ladekabel).</dd>
+                                    <dt>WiFi-Dialog erscheint nicht nach dem Flashen</dt>
+                                    <dd>Warte bis zu 15 Sekunden, bis der ESP32 gebootet hat. Falls er trotzdem nicht erscheint, nutze die manuelle Hotspot-Methode oben.</dd>
+                                    <dt>"Verbinden"-Button ist nicht sichtbar</dt>
+                                    <dd>Dein Browser unterstützt kein WebSerial. Bitte verwende <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong> auf einem Desktop-Computer.</dd>
+                                    <dt>ESP32 verbindet sich nicht mit dem WiFi</dt>
+                                    <dd>Prüfe, ob SSID und Passwort korrekt sind. Der ESP32 unterstützt nur 2,4-GHz-WiFi-Netzwerke (kein 5 GHz).</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
 
         <div class="footer">
             <a href="https://shop.altholtmann.com/">OCS2 - Shop</a> &mdash;
             Installer powered by <a href="https://esphome.github.io/esp-web-tools/">ESP Web Tools</a>.
         </div>
     </div>
-</body>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-    crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+</body>
 
 </html>
